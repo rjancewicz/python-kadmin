@@ -71,13 +71,9 @@ static PyKAdminPrincipalObject *KAdmin_get_principal(PyKAdminObject *self, PyObj
     char *client_name; 
     krb5_principal principal;
 
-    printf("nothing yet...\n");
-    
-    
     if (!PyArg_ParseTuple(args, "s", &client_name))
         return NULL;
 
-        printf("client found %s...\n", client_name);
     /*
         kadm5_ret_t    kadm5_get_principal(void *server_handle,
                                    krb5_principal principal,
@@ -87,29 +83,24 @@ static PyKAdminPrincipalObject *KAdmin_get_principal(PyKAdminObject *self, PyObj
 
     if (self->handle) {
 
-        printf("Handle found...\n");
         princ = PyKAdminPrincipalObject_create();
         princ->kadmin = self;
-        Py_INCREF(self);
+        Py_XINCREF(self);
 
         
-        printf("Principal Object Created, Parsing client_name: '%s'\n", client_name);
-
         if ( (errno = krb5_parse_name(self->context, client_name, &principal)) ) {
             printf("Failed to parse princ name %d\n", errno);
         }
     
-        
-        printf("Fetching Principal...\n" );
 
-        if ( (retval = kadm5_get_principal(self->handle, principal, &princ->princ, KADM5_PRINCIPAL_NORMAL_MASK)) ) {
+        if ( (retval = kadm5_get_principal(self->handle, principal, princ->entry, KADM5_PRINCIPAL_NORMAL_MASK)) ) {
             // TODO Handle Error More Cleanly (ie throw an exception in addition to the dealloc)
             printf("Failed to fetch princ name %d\n", retval);
             KAdminPrincipal_destroy(princ);
             princ = NULL;
         }
-        
-        Py_INCREF(princ);
+
+        Py_XINCREF(princ);
     } 
 
     return princ;
