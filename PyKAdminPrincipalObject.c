@@ -20,9 +20,9 @@ static void KAdminPrincipal_dealloc(PyKAdminPrincipalObject *self) {
     
     printf("KAdminPrincipal_dealloc...\n");
     
-    if (self->entry != NULL) {
-        kadm5_free_principal_ent(self->kadmin->handle, self->entry);
-    }
+    //if (self->entry != NULL) {
+    kadm5_free_principal_ent(self->kadmin->handle, &self->entry);
+    //}
 
     Py_XDECREF(self->kadmin);
    
@@ -36,8 +36,8 @@ static PyObject *KAdminPrincipal_new(PyTypeObject *type, PyObject *args, PyObjec
     self = (PyKAdminPrincipalObject *)type->tp_alloc(type, 0);
 
     if (self != NULL) {
-        self->entry = malloc(sizeof(kadm5_principal_ent_rec));
-        memset(self->entry, 0, sizeof(kadm5_principal_ent_rec));
+        //self->entry = malloc(sizeof(kadm5_principal_ent_rec));
+        memset(&self->entry, 0, sizeof(kadm5_principal_ent_rec));
     } 
     
     return (PyObject *)self;    
@@ -105,7 +105,7 @@ static PyObject *KAdminPrincipal_change_password(PyKAdminPrincipalObject *self, 
 
     if (password != NULL) {
 
-        retval = krb5_unparse_name(self->kadmin->context, self->entry->principal, &canon);
+        retval = krb5_unparse_name(self->kadmin->context, self->entry.principal, &canon);
         if (retval) {
             printf("krb5_unparse_name failure: %ld\n", retval); 
         }
@@ -123,7 +123,7 @@ static PyObject *KAdminPrincipal_change_password(PyKAdminPrincipalObject *self, 
 
         } */
 
-        retval = kadm5_chpass_principal(self->kadmin->handle, self->entry->principal, password);
+        retval = kadm5_chpass_principal(self->kadmin->handle, self->entry.principal, password);
         
         if (retval) {
             printf("kadm5_chpass_principal failure: %ld\n", retval);  
@@ -142,7 +142,7 @@ static PyObject *KAdminPrincipal_randomize_key(PyKAdminPrincipalObject *self, Py
     kadm5_ret_t retval; 
     char *canon     = NULL;
 
-    retval = krb5_unparse_name(self->kadmin->context, self->entry->principal, &canon);
+    retval = krb5_unparse_name(self->kadmin->context, self->entry.principal, &canon);
     if (retval) {
         printf("krb5_unparse_name failure: %ld\n", retval); 
     }
@@ -160,7 +160,7 @@ static PyObject *KAdminPrincipal_randomize_key(PyKAdminPrincipalObject *self, Py
 
     } */
 
-    retval = kadm5_randkey_principal(self->kadmin->handle, self->entry->principal, NULL, NULL);
+    retval = kadm5_randkey_principal(self->kadmin->handle, self->entry.principal, NULL, NULL);
     
     if (retval) {
         printf("kadm5_randkey_principal failure: %ld\n", retval);  

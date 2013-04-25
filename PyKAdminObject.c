@@ -93,7 +93,7 @@ static PyKAdminPrincipalObject *KAdmin_get_principal(PyKAdminObject *self, PyObj
         }
     
 
-        if ( (retval = kadm5_get_principal(self->handle, principal, princ->entry, KADM5_PRINCIPAL_NORMAL_MASK)) ) {
+        if ( (retval = kadm5_get_principal(self->handle, principal, &princ->entry, KADM5_PRINCIPAL_NORMAL_MASK)) ) {
             // TODO Handle Error More Cleanly (ie throw an exception in addition to the dealloc)
             printf("Failed to fetch princ name %d\n", retval);
             KAdminPrincipal_destroy(princ);

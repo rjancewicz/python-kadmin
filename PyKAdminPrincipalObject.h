@@ -10,7 +10,7 @@ typedef struct {
     PyObject_HEAD
 
     PyKAdminObject *kadmin;
-    kadm5_principal_ent_t entry;  
+    kadm5_principal_ent_rec entry;  
 } PyKAdminPrincipalObject;
 
 
