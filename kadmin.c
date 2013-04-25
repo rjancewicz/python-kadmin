@@ -83,60 +83,13 @@ void _kadmin_init_errors(void) {
 
 
 static PyKAdminObject *_kadmin_init_with_creds(PyObject *self, PyObject *args) {
-    // (char *client_name, krb5_ccache cc, char *service_name, kadm5_config_params *params, krb5_ui_4 struct_version, krb5_ui_4 api_version, char **db_args, void **server_handle)
     
-    PyObject *ret = NULL;
-
-    char *retstr                = NULL;
-    kadm5_ret_t retval;
-
-    char *client_name           = NULL;     // principal
-    char *ccache_name           = NULL;
-    krb5_ccache cc              = NULL;
-
-    kadm5_config_params params;
-    memset((char *) &params, 0, sizeof(params));
-
-    
-    if (!PyArg_ParseTuple(args, "sz", &client_name, &ccache_name))
-        return NULL;
-    
-    if (default_realm == NULL && krb5_get_default_realm(context, &default_realm)) {
-        fprintf(stderr, "%s: unable to get default realm\n", client_name);
-    }
-
-    params.mask |= KADM5_CONFIG_REALM;
-    params.realm = default_realm;
-
-
-    if (ccache_name == NULL) {
-        if ( (retval = krb5_cc_default(context, &cc)) ) {
-            return NULL;
-        }
-    } else {
-        if ( (retval = krb5_cc_resolve(context, ccache_name, &cc)) ) {
-            return NULL;
-        }
-    }
-
-    retval = kadm5_init_with_creds(context, client_name, cc, service_name, &params, struct_version, api_version, NULL, &server_handle);
+    PyKAdminObject *kadmin = PyKAdminObject_create();
    
-    if (retval) {
-        retstr = "Error";
-    } else {
-        retstr = "Success";
-    }
+    // TODO (needed to be rewritten)
     
-
-    //char *hello = malloc(sizeof(char) * 200);
-    
-    //sprintf(hello, "%s", client_name);
-
-    //kr
-
-    ret = Py_BuildValue("s", retstr);
-
-    return ret;
+    Py_XINCREF(kadmin);
+    return kadmin;
 }
 
 /*
@@ -173,22 +126,28 @@ static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) 
     //                        krb5_int32 type, krb5_principal *ret_princ);
   
     if (client_name == NULL) {
-
-        if ( (retval = krb5_sname_to_principal(kadmin->context, NULL, "host", KRB5_NT_SRV_HST, &principal)) ) {
-            printf("krb5_sname_to_principal %ld\n", retval);
+        
+        retval = krb5_sname_to_principal(kadmin->context, NULL, "host", KRB5_NT_SRV_HST, &principal);
+        if (retval) {
+            printf("krb5_sname_to_principal failure: %ld\n", retval);
         }
         
-        if ( (retval = krb5_unparse_name(kadmin->context, principal, &client_name)) ) {
-            printf("krb5_unparse_name %ld\n", retval);
+        retval = krb5_unparse_name(kadmin->context, principal, &client_name);
+        if (retval) {
+            printf("krb5_unparse_name failure %ld\n", retval);
         }
 
         krb5_free_principal(kadmin->context, principal);
     }
 
-    if ( (retval = kadm5_init_with_skey(kadmin->context, client_name, keytab_name, service_name, &params, struct_version, api_version, NULL, &kadmin->handle)) ) {
-        printf("kadm5_init_with_skey %ld\n", retval);
+    retval = kadm5_init_with_skey(kadmin->context, client_name, keytab_name, service_name, &params, struct_version, api_version, NULL, &kadmin->handle);
+    if (retval) {
+        printf("kadm5_init_with_skey failure: %ld\n", retval);
+        PyKAdminObject_destroy(kadmin);
+        kadmin = Py_None;
     }
-    
+
+    Py_XINCREF(kadmin);
     return kadmin;
 }
 
@@ -219,10 +178,14 @@ static PyKAdminObject *_kadmin_init_with_password(PyObject *self, PyObject *args
     if (!PyArg_ParseTuple(args, "zz", &client_name, &password))
         return NULL;
 
-    if ( (retval = kadm5_init_with_password(kadmin->context, client_name, password, service_name, &params, struct_version, api_version, NULL, &kadmin->handle)) ) {
-        // TODO handle error
+    retval = kadm5_init_with_password(kadmin->context, client_name, password, service_name, &params, struct_version, api_version, NULL, &kadmin->handle);
+    if (retval) {
+        printf("kadm5_init_with_password failure: %ld\n", retval);
+        PyKAdminObject_destroy(kadmin);
+        kadmin = Py_None;
     }
 
+    Py_XINCREF(kadmin);
     return kadmin;
 
 }

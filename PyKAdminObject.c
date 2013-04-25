@@ -12,11 +12,11 @@ typedef struct {
 } PyKAdminObject;
 */
 
-static void KAdmin_dealloc(PyKAdminObject *self) {
+static void PyKAdminObject_dealloc(PyKAdminObject *self) {
     
     kadm5_ret_t retval;
 
-    printf("KAdmin_dealloc...\n");
+    printf("PyKAdminObject_dealloc...\n");
 
     if (self->handle != NULL) {
         if ( (retval = kadm5_destroy(self->handle)) ) {
@@ -35,7 +35,7 @@ static void KAdmin_dealloc(PyKAdminObject *self) {
     self->ob_type->tp_free((PyObject*)self);
 }
 
-static PyObject *KAdmin_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+static PyObject *PyKAdminObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
 
     PyKAdminObject *self;
     kadm5_ret_t retval;
@@ -53,17 +53,17 @@ static PyObject *KAdmin_new(PyTypeObject *type, PyObject *args, PyObject *kwds) 
 
 }
 
-static int KAdmin_init(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
+static int PyKAdminObject_init(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
     return 0;
 }
 
-static PyObject *KAdmin_moo(PyKAdminObject *self) {
+static PyObject *PyKAdminObject_moo(PyKAdminObject *self) {
     
     return Py_BuildValue("s", "Moooooooooooo");
 
 }
 
-static PyKAdminPrincipalObject *KAdmin_get_principal(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
+static PyKAdminPrincipalObject *PyKAdminObject_get_principal(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
 
     PyKAdminPrincipalObject *princ = NULL;
     kadm5_ret_t retval;
@@ -107,10 +107,10 @@ static PyKAdminPrincipalObject *KAdmin_get_principal(PyKAdminObject *self, PyObj
 }
 
 
-static PyMethodDef KAdmin_methods[] = {
-    {"moo", (PyCFunction)KAdmin_moo, METH_VARARGS, "moo"},
-    {"get_princ", (PyCFunction)KAdmin_get_principal, METH_VARARGS, ""},
-    {"get_principal", (PyCFunction)KAdmin_get_principal, METH_VARARGS, ""},
+static PyMethodDef PyKAdminObject_methods[] = {
+    {"moo", (PyCFunction)PyKAdminObject_moo, METH_VARARGS, "moo"},
+    {"get_princ", (PyCFunction)PyKAdminObject_get_principal, METH_VARARGS, ""},
+    {"get_principal", (PyCFunction)PyKAdminObject_get_principal, METH_VARARGS, ""},
     {NULL, NULL, 0, NULL}
 };
 
@@ -120,7 +120,7 @@ PyTypeObject PyKAdminObject_Type = {
     "kadmin.KAdmin",             /*tp_name*/
     sizeof(PyKAdminObject),             /*tp_basicsize*/
     0,                         /*tp_itemsize*/
-    (destructor)KAdmin_dealloc, /*tp_dealloc*/
+    (destructor)PyKAdminObject_dealloc, /*tp_dealloc*/
     0,                         /*tp_print*/
     0,                         /*tp_getattr*/
     0,                         /*tp_setattr*/
@@ -143,7 +143,7 @@ PyTypeObject PyKAdminObject_Type = {
     0,                     /* tp_weaklistoffset */
     0,                     /* tp_iter */
     0,                     /* tp_iternext */
-    KAdmin_methods,             /* tp_methods */
+    PyKAdminObject_methods,             /* tp_methods */
     0,             /* tp_members */
     0,                         /* tp_getset */
     0,                         /* tp_base */
@@ -151,15 +151,18 @@ PyTypeObject PyKAdminObject_Type = {
     0,                         /* tp_descr_get */
     0,                         /* tp_descr_set */
     0,                         /* tp_dictoffset */
-    (initproc)KAdmin_init,      /* tp_init */
+    (initproc)PyKAdminObject_init,      /* tp_init */
     0,                         /* tp_alloc */
-    KAdmin_new,                 /* tp_new */
+    PyKAdminObject_new,                 /* tp_new */
 };
 
 
 
 PyKAdminObject *PyKAdminObject_create(void) {
-    
-    return (PyKAdminObject *)KAdmin_new(&PyKAdminObject_Type, NULL, NULL);
+    return (PyKAdminObject *)PyKAdminObject_new(&PyKAdminObject_Type, NULL, NULL);
+}
+
+void PyKAdminObject_destroy(PyKAdminObject *self) {
+    PyKAdminObject_dealloc(self); 
 }
 
