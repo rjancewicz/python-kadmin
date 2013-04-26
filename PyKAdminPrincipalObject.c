@@ -53,16 +53,16 @@ static int KAdminPrincipal_init(PyKAdminPrincipalObject *self, PyObject *args, P
 /*
 typedef struct _kadm5_principal_ent_t {
     krb5_principal  principal;
-    krb5_timestamp  princ_expire_time;
-    krb5_timestamp  last_pwd_change;
-    krb5_timestamp  pw_expiration;
-    krb5_deltat     max_life;
+    #krb5_timestamp  princ_expire_time;
+    #krb5_timestamp  last_pwd_change;
+    #krb5_timestamp  pw_expiration;
+    #krb5_deltat     max_life;
     krb5_principal  mod_name;
-    krb5_timestamp  mod_date;
+    #krb5_timestamp  mod_date;
     krb5_flags      attributes;
-    krb5_kvno       kvno;
-    krb5_kvno       mkvno;
-    char            *policy;
+    #krb5_kvno       kvno;
+    #krb5_kvno       mkvno;
+    #char            *policy;
     long            aux_attributes;
 
     // version 2 fields //
@@ -80,18 +80,87 @@ typedef struct _kadm5_principal_ent_t {
 //const int offsetof(PyKAdminPrincipalObject, princ) = offsetof(PyKAdminPrincipalObject, princ);
 
 static PyMemberDef KAdminPrincipal_members[] = {
-    {"last_password_change",    T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, last_pwd_change),       READONLY, ""},
-    {"expire_time",             T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, princ_expire_time),     READONLY, ""},
-    {"password_expiration",     T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, pw_expiration),         READONLY, ""},
-    {"modified_time",           T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, mod_date),              READONLY, ""},
-    {"max_life",                T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, max_life),              READONLY, ""},
+    {"last_password_change",        T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, last_pwd_change),       READONLY, ""},
+    {"expire_time",                 T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, princ_expire_time),     READONLY, ""},
+    {"password_expiration",         T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, pw_expiration),         READONLY, ""},
+    {"modified_time",               T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, mod_date),              READONLY, ""},
+    {"max_life",                    T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, max_life),              READONLY, ""},
     
-    {"max_renewable_life",      T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, max_renewable_life),    READONLY, ""},
-    {"last_success",            T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, last_success),          READONLY, ""},
-    {"last_failed",             T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, last_failed),           READONLY, ""},
+    {"max_renewable_life",          T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, max_renewable_life),    READONLY, ""},
+    {"last_success",                T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, last_success),          READONLY, ""},
+    {"last_failed",                 T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, last_failed),           READONLY, ""},
+    {"failed_auth_count",           T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, fail_auth_count),          READONLY, ""},
+    
+    {"key_version_number",          T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, kvno),                  READONLY, ""},
+    {"master_key_version_number",   T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, mkvno),                 READONLY, ""},
 
+    {"policy",                      T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, policy),                READONLY, ""},
+    
     {NULL}
 };
+
+
+/*
+static PyObject *PyKAdminPrincipal_get_policy(PyKAdminPrincipalObject *self, void *closure) {
+    PyObject *policy = Py_BuildValue("s", self->entry.policy);
+    return policy;
+}
+
+static int PyKAdminPrincipal_set_policy(PyKAdminPrincipalObject *self, PyObject *value, void *closure) {
+   return 0; 
+}
+*/
+
+static PyObject *PyKAdminPrincipal_get_principal(PyKAdminPrincipalObject *self, void *closure) {
+  
+    char *client_name = NULL;
+    
+    krb5_unparse_name(self->kadmin->context, self->entry.principal, &client_name);
+
+    PyObject *principal = Py_BuildValue("s", client_name);
+
+    free(client_name);
+
+    return principal;
+}
+
+static int PyKAdminPrincipal_set_principal(PyKAdminPrincipalObject *self, PyObject *value, void *closure) {
+    return 0;
+}
+
+
+
+static PyGetSetDef KAdminPrincipal_getters_setters[] = {
+
+    // {"policy", (getter)PyKAdminPrincipal_get_policy, (setter)PyKAdminPrincipal_set_policy, "Kerberos Policy"},
+    // {"principal", (getter)PyKAdminPrincipal_get_principal, (setter)PyKAdminPrincipal_set_principal, "Kerberos Principal"},
+    // {"policy", (getter)PyKAdminPrincipal_get_policy, NULL, "Kerberos Policy"},
+    
+    {"principal", (getter)PyKAdminPrincipal_get_principal, NULL, "Kerberos Principal"},
+    {NULL}
+};
+
+
+static void _KAdminPrincipal_refresh_principal(PyKAdminPrincipalObject *self) {
+
+    kadm5_ret_t retval;
+
+    retval = kadm5_get_principal(self->kadmin->handle, self->entry.principal, &self->entry, KADM5_PRINCIPAL_NORMAL_MASK);
+    
+    if (retval) {
+        printf("kadm5_get_principal failed: %ld", retval);
+    }
+
+}
+
+
+static PyObject *PyKAdminPrincipal_str(PyKAdminPrincipalObject *self) {
+
+    Py_XINCREF(Py_None);
+    return Py_None;
+
+}
+
 
 static PyObject *KAdminPrincipal_change_password(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
 
@@ -127,9 +196,13 @@ static PyObject *KAdminPrincipal_change_password(PyKAdminPrincipalObject *self, 
         
         if (retval) {
             printf("kadm5_chpass_principal failure: %ld\n", retval);  
+        } else {
+
+            ret = Py_True;
+            _KAdminPrincipal_refresh_principal(self);
         }
-      
-        ret = Py_True;
+        
+
     }
     
     Py_XINCREF(ret);
@@ -165,6 +238,7 @@ static PyObject *KAdminPrincipal_randomize_key(PyKAdminPrincipalObject *self, Py
     if (retval) {
         printf("kadm5_randkey_principal failure: %ld\n", retval);  
     } else {
+        _KAdminPrincipal_refresh_principal(self);
         ret = Py_True;
     }
     
@@ -178,6 +252,7 @@ static PyMethodDef KAdminPrincipal_methods[] = {
     {"change_password", (PyCFunction)KAdminPrincipal_change_password,   METH_VARARGS, ""},
     {"randkey",         (PyCFunction)KAdminPrincipal_randomize_key,     METH_VARARGS, ""},
     {"randomize_key",   (PyCFunction)KAdminPrincipal_randomize_key,     METH_VARARGS, ""},
+
     {NULL, NULL, 0, NULL}
 };
 
@@ -199,7 +274,7 @@ PyTypeObject PyKAdminPrincipalObject_Type = {
     0,                         /*tp_as_mapping*/
     0,                         /*tp_hash */
     0,                         /*tp_call*/
-    0,                         /*tp_str*/
+    PyKAdminPrincipal_str,                         /*tp_str*/
     0,                         /*tp_getattro*/
     0,                         /*tp_setattro*/
     0,                         /*tp_as_buffer*/
@@ -213,7 +288,7 @@ PyTypeObject PyKAdminPrincipalObject_Type = {
     0,                     /* tp_iternext */
     KAdminPrincipal_methods,             /* tp_methods */
     KAdminPrincipal_members,             /* tp_members */
-    0,                         /* tp_getset */
+    KAdminPrincipal_getters_setters,                         /* tp_getset */
     0,                         /* tp_base */
     0,                         /* tp_dict */
     0,                         /* tp_descr_get */
