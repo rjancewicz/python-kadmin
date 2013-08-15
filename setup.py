@@ -6,7 +6,7 @@ setup(
                     libraries       = ["krb5", "kadm5clnt"],
                     library_dirs    = ["/usr/lib64/"], 
                     include_dirs    = ["/usr/include/et/"],
-                    sources         = ["./kadmin.c", "./PyKAdminObject.c", "./PyKAdminPrincipalObject.c"],
+                    sources         = ["./kadmin.c", "./PyKAdminErrors.c", "./PyKAdminObject.c", "./PyKAdminPrincipalObject.c", "getdate.c"],
                     
                 )
         ]

@@ -1,28 +1,17 @@
 
 #include <Python.h>
 #include <structmember.h>
-
+#include <krb5/krb5.h>
 #include <kadm5/admin.h>
 
+#include "PyKAdminErrors.h"
 #include "PyKAdminObject.h"
 #include "PyKAdminPrincipalObject.h"
 
-/*
-typedef struct {
-    PyObject_HEAD
-
-    PyKAdminObject *kadmin;
-    kadm5_principal_ent_t entry;  
-} PyKAdminPrincipalObject;
-*/
 
 static void KAdminPrincipal_dealloc(PyKAdminPrincipalObject *self) {
     
-    printf("KAdminPrincipal_dealloc...\n");
-    
-    //if (self->entry != NULL) {
     kadm5_free_principal_ent(self->kadmin->handle, &self->entry);
-    //}
 
     Py_XDECREF(self->kadmin);
    
@@ -35,49 +24,17 @@ static PyObject *KAdminPrincipal_new(PyTypeObject *type, PyObject *args, PyObjec
 
     self = (PyKAdminPrincipalObject *)type->tp_alloc(type, 0);
 
-    if (self != NULL) {
-        //self->entry = malloc(sizeof(kadm5_principal_ent_rec));
-        memset(&self->entry, 0, sizeof(kadm5_principal_ent_rec));
-    } 
+    if (!self)
+        return NULL;
     
+    memset(&self->entry, 0, sizeof(kadm5_principal_ent_rec));
     return (PyObject *)self;    
-
 }
 
 static int KAdminPrincipal_init(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
     return 0;
 }
 
-
-
-/*
-typedef struct _kadm5_principal_ent_t {
-    krb5_principal  principal;
-    #krb5_timestamp  princ_expire_time;
-    #krb5_timestamp  last_pwd_change;
-    #krb5_timestamp  pw_expiration;
-    #krb5_deltat     max_life;
-    krb5_principal  mod_name;
-    #krb5_timestamp  mod_date;
-    krb5_flags      attributes;
-    #krb5_kvno       kvno;
-    #krb5_kvno       mkvno;
-    #char            *policy;
-    long            aux_attributes;
-
-    // version 2 fields //
-    krb5_deltat max_renewable_life;
-    krb5_timestamp last_success;
-    krb5_timestamp last_failed;
-    krb5_kvno fail_auth_count;
-    krb5_int16 n_key_data;
-    krb5_int16 n_tl_data;
-    krb5_tl_data *tl_data;
-    krb5_key_data *key_data;
-} kadm5_principal_ent_rec, *kadm5_principal_ent_t;
-*/
-
-//const int offsetof(PyKAdminPrincipalObject, princ) = offsetof(PyKAdminPrincipalObject, princ);
 
 static PyMemberDef KAdminPrincipal_members[] = {
     {"last_password_change",        T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, last_pwd_change),       READONLY, ""},
@@ -100,17 +57,6 @@ static PyMemberDef KAdminPrincipal_members[] = {
 };
 
 
-/*
-static PyObject *PyKAdminPrincipal_get_policy(PyKAdminPrincipalObject *self, void *closure) {
-    PyObject *policy = Py_BuildValue("s", self->entry.policy);
-    return policy;
-}
-
-static int PyKAdminPrincipal_set_policy(PyKAdminPrincipalObject *self, PyObject *value, void *closure) {
-   return 0; 
-}
-*/
-
 static PyObject *PyKAdminPrincipal_get_principal(PyKAdminPrincipalObject *self, void *closure) {
   
     char *client_name = NULL;
@@ -124,9 +70,27 @@ static PyObject *PyKAdminPrincipal_get_principal(PyKAdminPrincipalObject *self, 
     return principal;
 }
 
-static int PyKAdminPrincipal_set_principal(PyKAdminPrincipalObject *self, PyObject *value, void *closure) {
-    return 0;
+static PyObject *KAdminPrincipal_set_expire(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
+    
+    kadm5_ret_t retval; 
+    time_t date     = 0; 
+    char *expire    = NULL;
+
+    if (!PyArg_ParseTuple(args, "s", &expire))
+        return NULL;
+    
+    date = get_date(expire);
+
+    self->entry.princ_expire_time = date;
+
+    retval = kadm5_modify_principal(self->kadmin->handle, &self->entry, KADM5_PRINC_EXPIRE_TIME);
+
+    if (retval) 
+        return PyKAdminError_raise_kadmin_error(retval, "kadm5_modify_principal");
+
+    Py_RETURN_TRUE;
 }
+
 
 
 
@@ -147,24 +111,13 @@ static void _KAdminPrincipal_refresh_principal(PyKAdminPrincipalObject *self) {
 
     retval = kadm5_get_principal(self->kadmin->handle, self->entry.principal, &self->entry, KADM5_PRINCIPAL_NORMAL_MASK);
     
-    if (retval) {
-        printf("kadm5_get_principal failed: %ld", retval);
-    }
-
-}
-
-
-static PyObject *PyKAdminPrincipal_str(PyKAdminPrincipalObject *self) {
-
-    Py_XINCREF(Py_None);
-    return Py_None;
-
+    //if (retval) 
+    //    return PyKAdminError_raise_kadmin_error(retval, "kadm5_get_principal");
 }
 
 
 static PyObject *KAdminPrincipal_change_password(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
 
-    PyObject *ret = Py_False;
     kadm5_ret_t retval; 
     char *password  = NULL;
     char *canon     = NULL;
@@ -172,41 +125,26 @@ static PyObject *KAdminPrincipal_change_password(PyKAdminPrincipalObject *self, 
     if (!PyArg_ParseTuple(args, "s", &password))
         return NULL; 
 
-    if (password != NULL) {
+    if (password) {
 
         retval = krb5_unparse_name(self->kadmin->context, self->entry.principal, &canon);
+
         if (retval) {
             printf("krb5_unparse_name failure: %ld\n", retval); 
         }
         
-        /* if (self->debug) {
-        
-            printf("is_null(self->kadmin) = %s\n", (self->kadmin == NULL ? "TRUE" : "FALSE"));
-            printf("is_null(self->kadmin->context) = %s\n", (self->kadmin->context == NULL ? "TRUE" : "FALSE"));
-            printf("is_null(self->kadmin->handle) = %s\n", (self->kadmin->handle == NULL ? "TRUE" : "FALSE"));
-            printf("is_null(self->entry) = %s\n", (self->entry == NULL ? "TRUE" : "FALSE"));
-            printf("is_null(self->entry->principal) = %s\n", (self->entry->principal == NULL ? "TRUE" : "FALSE"));
-
-            printf("canonical principal = %s\n", canon);
-            printf("password = <omitted>\n", password);
-
-        } */
-
         retval = kadm5_chpass_principal(self->kadmin->handle, self->entry.principal, password);
         
-        if (retval) {
-            printf("kadm5_chpass_principal failure: %ld\n", retval);  
-        } else {
-
-            ret = Py_True;
-            _KAdminPrincipal_refresh_principal(self);
-        }
+        if (retval)
+            return PyKAdminError_raise_kadmin_error(retval, "kadm5_chpass_principal");
+            
+        _KAdminPrincipal_refresh_principal(self);
         
+        Py_RETURN_TRUE;
 
+    } else {
+        Py_RETURN_FALSE;
     }
-    
-    Py_XINCREF(ret);
-    return ret;
 }
 
 static PyObject *KAdminPrincipal_randomize_key(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
@@ -252,6 +190,8 @@ static PyMethodDef KAdminPrincipal_methods[] = {
     {"change_password", (PyCFunction)KAdminPrincipal_change_password,   METH_VARARGS, ""},
     {"randkey",         (PyCFunction)KAdminPrincipal_randomize_key,     METH_VARARGS, ""},
     {"randomize_key",   (PyCFunction)KAdminPrincipal_randomize_key,     METH_VARARGS, ""},
+    
+    {"expire",          (PyCFunction)KAdminPrincipal_set_expire,     METH_VARARGS, ""},
 
     {NULL, NULL, 0, NULL}
 };
@@ -274,7 +214,7 @@ PyTypeObject PyKAdminPrincipalObject_Type = {
     0,                         /*tp_as_mapping*/
     0,                         /*tp_hash */
     0,                         /*tp_call*/
-    PyKAdminPrincipal_str,                         /*tp_str*/
+    0, //PyKAdminPrincipal_str,                         /*tp_str*/
     0,                         /*tp_getattro*/
     0,                         /*tp_setattro*/
     0,                         /*tp_as_buffer*/

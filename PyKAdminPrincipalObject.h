@@ -14,6 +14,8 @@ typedef struct {
 } PyKAdminPrincipalObject;
 
 
+extern time_t get_date(char *);
+
 //static void KAdminPrincipal_dealloc(PyKAdminPrincipalObject *);
 void KAdminPrincipal_destroy(PyKAdminPrincipalObject *self); 
 

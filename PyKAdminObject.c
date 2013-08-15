@@ -1,6 +1,7 @@
 
 #include "PyKAdminObject.h"
 #include "PyKAdminPrincipalObject.h"
+#include "PyKAdminErrors.h"
 
 /*
 typedef struct {
@@ -16,21 +17,16 @@ static void PyKAdminObject_dealloc(PyKAdminObject *self) {
     
     kadm5_ret_t retval;
 
-    printf("PyKAdminObject_dealloc...\n");
-
-    if (self->handle != NULL) {
-        if ( (retval = kadm5_destroy(self->handle)) ) {
-            // TODO handle error
-        }
+    if (self->handle) {
+        retval = kadm5_destroy(self->handle);
+        if (retval) {}
     }
     
-    if (self->context != NULL) {
+    if (self->context) 
         krb5_free_context(self->context);
-    }
 
-    if (self->realm != NULL) {
+    if (self->realm)
         free(self->realm);
-    }
 
     self->ob_type->tp_free((PyObject*)self);
 }
@@ -57,11 +53,55 @@ static int PyKAdminObject_init(PyKAdminObject *self, PyObject *args, PyObject *k
     return 0;
 }
 
-static PyObject *PyKAdminObject_moo(PyKAdminObject *self) {
-    
-    return Py_BuildValue("s", "Moooooooooooo");
+/*static krb5_error_code create_princ(void *handle, kadm5_principal_ent_rec *princ, long mask, int n_ks, krb5_key_salt_tuple *ks, char *pass) {
 
+    if (ks)
+        return kadm5_create_principal_3(handle, princ, mask, n_ks, ks, pass);
+    else
+        return kadm5_create_principal(handle, princ, mask, pass);
+
+}*/
+
+
+static PyObject *PyKAdminObject_create_principal(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
+
+    //PyObject *result = NULL;
+
+    kadm5_ret_t retval;
+    krb5_error_code errno;
+
+    char *princ_name = NULL;
+    char *princ_pass = NULL;
+
+    kadm5_principal_ent_rec entry;
+    
+    memset(&entry, 0, sizeof(entry));
+    entry.attributes = 0;
+    
+    if (!PyArg_ParseTuple(args, "sz", &princ_name, &princ_pass))
+        return NULL;
+
+    if (self->handle) {
+
+        if ( (errno = krb5_parse_name(self->context, princ_name, &entry.principal) ) ) {
+
+            printf("Error: krb5_unparse_name [%d]\n", errno);
+            return NULL; 
+        
+        } else {
+
+            retval = kadm5_create_principal(self->handle, &entry, KADM5_PRINCIPAL, NULL); 
+            
+            if (retval)
+                return PyKAdminError_raise_kadmin_error(retval, "kadm5_create_principal");
+        }
+    }
+
+    kadm5_free_principal_ent(self->handle, &entry);
+
+    Py_RETURN_TRUE;
 }
+
 
 static PyKAdminPrincipalObject *PyKAdminObject_get_principal(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
 
@@ -74,33 +114,27 @@ static PyKAdminPrincipalObject *PyKAdminObject_get_principal(PyKAdminObject *sel
     if (!PyArg_ParseTuple(args, "s", &client_name))
         return NULL;
 
-    /*
-        kadm5_ret_t    kadm5_get_principal(void *server_handle,
-                                   krb5_principal principal,
-                                   kadm5_principal_ent_t ent,
-                                   long mask);
-    */
-
     if (self->handle) {
 
         princ = PyKAdminPrincipalObject_create();
         princ->kadmin = self;
         Py_XINCREF(self);
-
         
-        if ( (errno = krb5_parse_name(self->context, client_name, &principal)) ) {
+        errno = krb5_parse_name(self->context, client_name, &principal);
+        if (errno) {
             printf("Failed to parse princ name %d\n", errno);
         }
     
-
         if ( (retval = kadm5_get_principal(self->handle, principal, &princ->entry, KADM5_PRINCIPAL_NORMAL_MASK)) ) {
-            // TODO Handle Error More Cleanly (ie throw an exception in addition to the dealloc)
-            printf("Failed to fetch princ name %d\n", retval);
             KAdminPrincipal_destroy(princ);
-            princ = NULL;
+            krb5_free_principal(self->context, principal);
+
+            return (PyKAdminPrincipalObject *)PyKAdminError_raise_kadmin_error(retval, "kadm5_get_principal");
         }
 
-        Py_XINCREF(princ);
+        krb5_free_principal(self->context, principal);
+
+        // Py_XINCREF(princ);
     } 
 
     return princ;
@@ -108,9 +142,11 @@ static PyKAdminPrincipalObject *PyKAdminObject_get_principal(PyKAdminObject *sel
 
 
 static PyMethodDef PyKAdminObject_methods[] = {
-    {"moo", (PyCFunction)PyKAdminObject_moo, METH_VARARGS, "moo"},
     {"get_princ", (PyCFunction)PyKAdminObject_get_principal, METH_VARARGS, ""},
     {"get_principal", (PyCFunction)PyKAdminObject_get_principal, METH_VARARGS, ""},
+    {"ank", (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
+    {"create_princ", (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
+    {"create_principal", (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
     {NULL, NULL, 0, NULL}
 };
 

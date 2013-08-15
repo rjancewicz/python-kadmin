@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "PyKAdminErrors.h"
+
 #include "PyKAdminObject.h"
 #include "PyKAdminPrincipalObject.h"
 
@@ -48,8 +50,6 @@ static struct PyMethodDef module_methods[] = {
 };
 
 
-
-
 PyMODINIT_FUNC initkadmin(void) {
 
     if (PyType_Ready(&PyKAdminObject_Type) < 0) 
@@ -66,7 +66,12 @@ PyMODINIT_FUNC initkadmin(void) {
     if (module == NULL)
         return;
 
-   
+    KAdminError = PyErr_NewException("kadmin.KAdminError", NULL, NULL);
+    Py_XINCREF(KAdminError);
+
+    PyModule_AddObject(module, "KAdminError", KAdminError);
+
+    PyKAdminError_init(module); 
 
 }
 
@@ -142,12 +147,10 @@ static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) 
 
     retval = kadm5_init_with_skey(kadmin->context, client_name, keytab_name, service_name, &params, struct_version, api_version, NULL, &kadmin->handle);
     if (retval) {
-        printf("kadm5_init_with_skey failure: %ld\n", retval);
         PyKAdminObject_destroy(kadmin);
-        kadmin = Py_None;
+        return (PyKAdminObject *)PyKAdminError_raise_kadmin_error(retval, "kadm5_init_with_skey");
     }
 
-    Py_XINCREF(kadmin);
     return kadmin;
 }
 
@@ -182,7 +185,7 @@ static PyKAdminObject *_kadmin_init_with_password(PyObject *self, PyObject *args
     if (retval) {
         printf("kadm5_init_with_password failure: %ld\n", retval);
         PyKAdminObject_destroy(kadmin);
-        kadmin = Py_None;
+        return NULL;
     }
 
     Py_XINCREF(kadmin);
