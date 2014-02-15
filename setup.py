@@ -1,20 +1,42 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 from distutils.core import setup, Extension
+from distutils.util import execute, newer
+from distutils.spawn import spawn
 
-setup(
-    ext_modules=[
-        Extension(
-            "kadmin",
-            libraries=["krb5", "kadm5clnt"],
-            sources=[
-                "./kadmin.c",
-                "./PyKAdminErrors.c",
-                "./PyKAdminObject.c",
-                "./PyKAdminPrincipalObject.c",
-                "getdate.c"
-                ]
-            )
-        ]
-    )
-    #/usr/lib64/libkadm5clnt_mit.so
+
+if newer('getdate.y', 'getdate.c'):
+    execute(spawn, (['bison', '-y', '-o', 'getdate.c', 'getdate.y'],))
+
+setup(name='kadmin',
+      description='Python module for kerberos admin (kadm5)',
+      url='https://github.com/russjancewicz/python-kadmin',
+      author='Russell Jancewicz',
+      author_email='russell.jancewicz@gmail.com',
+      ext_modules=[
+          Extension(
+              "kadmin",
+              libraries=["krb5", "kadm5clnt"],
+              sources=[
+                  "./kadmin.c",
+                  "./PyKAdminErrors.c",
+                  "./PyKAdminObject.c",
+                  "./PyKAdminPrincipalObject.c",
+                  "getdate.c"
+                  ]
+              )
+          ],
+      classifiers=[
+          "Development Status :: 4 - Beta",
+          "Environment :: Console",
+          "Intended Audience :: System Administrators",
+          "Intended Audience :: Developers",
+          "Operating System :: POSIX",
+          "Programming Language :: C",
+          "Programming Language :: Python",
+          "Programming Language :: YACC",
+          "Topic :: Software Development :: Libraries :: Python Modules",
+          "Topic :: System :: Systems Administration :: Authentication/Directory",
+          ]
+      )
