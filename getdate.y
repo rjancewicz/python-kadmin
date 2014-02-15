@@ -13,7 +13,7 @@
 /* SUPPRESS 287 on yaccpar_sccsid *//* Unusd static variable */
 /* SUPPRESS 288 on yyerrlab *//* Label unused */
 
-#include "autoconf.h"
+//#include "autoconf.h"
 #include <string.h>
 #include <stdlib.h>
 
