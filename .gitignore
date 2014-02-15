@@ -15,3 +15,7 @@
 *.exe
 *.out
 *.app
+
+# Editor turds
+.*.swp
+*~
