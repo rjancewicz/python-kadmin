@@ -4,7 +4,7 @@
  */
 
 
-#include <python2.6/Python.h>
+#include <Python.h>
 #include <kadm5/admin.h>
 #include <krb5/krb5.h>
 
