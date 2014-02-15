@@ -7,8 +7,6 @@ setup(
         Extension(
             "kadmin",
             libraries=["krb5", "kadm5clnt"],
-            library_dirs=["/usr/lib64/"],
-            include_dirs=["/usr/include/et/"],
             sources=[
                 "./kadmin.c",
                 "./PyKAdminErrors.c",
