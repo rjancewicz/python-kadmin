@@ -4,13 +4,15 @@
 #include <krb5/krb5.h>
 #include <stdio.h>
 #include <string.h>
+#include <structmember.h>
 
 typedef struct {
     PyObject_HEAD
     
     krb5_context context; 
-    void *handle;
+    void *server_handle;
     char *realm;
+
 } PyKAdminObject;
 
 PyTypeObject PyKAdminObject_Type;

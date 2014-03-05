@@ -14,15 +14,19 @@ setup(name='kadmin',
       url='https://github.com/russjancewicz/python-kadmin',
       author='Russell Jancewicz',
       author_email='russell.jancewicz@gmail.com',
+      #ext_package="python-kadmin",
       ext_modules=[
           Extension(
               "kadmin",
               libraries=["krb5", "kadm5clnt"],
+              include_dirs=["/usr/include/et/"],
               sources=[
                   "./kadmin.c",
                   "./PyKAdminErrors.c",
                   "./PyKAdminObject.c",
+                  "./PyKAdminIterator.c",
                   "./PyKAdminPrincipalObject.c",
+                  "./PyKAdminPolicyObject.c",
                   "getdate.c"
                   ]
               )

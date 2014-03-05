@@ -1,15 +1,11 @@
 
-#include "PyKAdminPolicyObject.h"
+#include "PyKAdminObject.h"
+#include "PyKAdminErrors.h"
+#include "PyKAdminIterator.h"
 #include "PyKAdminPrincipalObject.h"
+#include "PyKAdminPolicyObject.h"
 
-/*
-typedef struct {
-    PyObject_HEAD
-    
-    PyKAdminObject *kadmin;
-    kadm5_policy_ent_rec policy; 
-} PyKAdminPolicyObject;
-*/
+#define IS_NULL(ptr) (ptr == NULL)
 
 static void PyKAdminPolicyObject_dealloc(PyKAdminPolicyObject *self) {
     
@@ -82,8 +78,21 @@ PyTypeObject PyKAdminPolicyObject_Type = {
 
 
 
-PyKAdminPolicyObject *PyKAdminPolicyObject_create(void) {
-    return (PyKAdminPolicyObject *)PyKAdminPolicyObject_new(&PyKAdminPolicyObject_Type, NULL, NULL);
+PyKAdminPolicyObject *PyKAdminPolicyObject_create(PyKAdminObject *kadmin, char *name) {
+
+
+    PyKAdminPolicyObject *policy = NULL; 
+
+    policy = (PyKAdminPolicyObject *)PyKAdminPolicyObject_new(&PyKAdminPolicyObject_Type, NULL, NULL);
+    
+    if (!IS_NULL(policy)) {
+        Py_XINCREF(kadmin);
+        policy->kadmin = kadmin;
+    }
+
+    //_KAdminPolicy_load_principal(policy, client_name);
+
+    return policy;
 }
 
 void PyKAdminPolicyObject_destroy(PyKAdminPolicyObject *self) {
