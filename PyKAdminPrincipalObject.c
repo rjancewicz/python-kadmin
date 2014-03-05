@@ -135,7 +135,7 @@ static PyObject *_KAdminPrincipal_load_principal(PyKAdminPrincipalObject *self, 
         krb5_free_principal(self->kadmin->context, parsed_name);
     }
 
-    Py_RETURN_NONE;
+    Py_RETURN_TRUE;
 }
 
 static PyObject *_KAdminPrincipal_refresh_principal(PyKAdminPrincipalObject *self) {
@@ -263,7 +263,13 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_create(PyKAdminObject *kadmin, 
         principal->kadmin = kadmin;
     }
 
-    _KAdminPrincipal_load_principal(principal, client_name);
+    PyObject *result = _KAdminPrincipal_load_principal(principal, client_name);
+
+    if (IS_NULL(result)) {
+        KAdminPrincipal_dealloc(principal);
+        principal = (PyKAdminPrincipalObject *)Py_None;
+        Py_XINCREF(Py_None);
+    }
 
     return principal;
 }
