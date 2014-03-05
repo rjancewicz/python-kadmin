@@ -26,7 +26,7 @@ static PyKAdminObject *_kadmin_init_with_password(PyObject *self, PyObject *args
 //static PyObject *_kadmin_destroy(PyObject *self, PyObject *args); 
 
 
-static char module_docstring[] = "hello, world!";
+static char module_docstring[] = "";
 
 
 krb5_context context;
@@ -84,16 +84,41 @@ void _kadmin_init_errors(void) {
 
 }
 */
-
+/*
+kadm5_ret_t    kadm5_init_with_password(krb5_context context,
+                                        char *client_name,
+                                        char *pass,
+                                        char *service_name,
+                                        kadm5_config_params *params,
+                                        krb5_ui_4 struct_version,
+                                        krb5_ui_4 api_version,
+                                        char **db_args,
+                                        void **server_handle);
+*/
 
 
 static PyKAdminObject *_kadmin_init_with_creds(PyObject *self, PyObject *args) {
     
     PyKAdminObject *kadmin = PyKAdminObject_create();
+    kadm5_ret_t retval;
    
-    // TODO (needed to be rewritten)
+    char *client_name = NULL;
+    char *clinet_pass = NULL;
     
-    Py_XINCREF(kadmin);
+
+    kadm5_config_params *params = calloc(0x1, sizeof(kadm5_config_params));
+
+    if (!PyArg_ParseTuple(args, "|zz", &client_name, &clinet_pass)) {
+        return NULL;
+    }
+
+    retval = kadm5_init_with_password(kadmin->context, client_name, clinet_pass, service_name, params, struct_version, api_version, NULL, &kadmin->handle);
+    if (retval) {
+        PyKAdminObject_destroy(kadmin);
+        return (PyKAdminObject *)PyKAdminError_raise_kadmin_error(retval, "kadmin_init_with_creds");
+
+    }
+    
     return kadmin;
 }
 
@@ -119,7 +144,7 @@ static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) 
     char *keytab_name           = NULL;
 
     kadm5_config_params params;
-    memset((char *) &params, 0, sizeof(params));
+    memset(&params, 0, sizeof(params));
 
     if (!PyArg_ParseTuple(args, "|zz", &client_name, &keytab_name))
         return NULL; 

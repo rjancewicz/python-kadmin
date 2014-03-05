@@ -3,6 +3,8 @@
 #include "PyKAdminPrincipalObject.h"
 #include "PyKAdminErrors.h"
 
+#define IS_NULL(ptr) (ptr == NULL)
+
 /*
 typedef struct {
     PyObject_HEAD
@@ -17,16 +19,18 @@ static void PyKAdminObject_dealloc(PyKAdminObject *self) {
     
     kadm5_ret_t retval;
 
-    if (self->handle) {
+    if (!IS_NULL(self->handle)) {
         retval = kadm5_destroy(self->handle);
         if (retval) {}
     }
     
-    if (self->context) 
+    if (!IS_NULL(self->context)) {
         krb5_free_context(self->context);
+    }
 
-    if (self->realm)
+    if (!IS_NULL(self->realm)) {
         free(self->realm);
+    }
 
     self->ob_type->tp_free((PyObject*)self);
 }
@@ -38,7 +42,7 @@ static PyObject *PyKAdminObject_new(PyTypeObject *type, PyObject *args, PyObject
 
     self = (PyKAdminObject *)type->tp_alloc(type, 0);
 
-    if (self != NULL) {
+    if (!IS_NULL(self)) {
         if ( (retval = krb5_init_context(&(self->context))) ) {
             Py_DECREF(self);
             return NULL;
@@ -142,11 +146,12 @@ static PyKAdminPrincipalObject *PyKAdminObject_get_principal(PyKAdminObject *sel
 
 
 static PyMethodDef PyKAdminObject_methods[] = {
-    {"get_princ", (PyCFunction)PyKAdminObject_get_principal, METH_VARARGS, ""},
-    {"get_principal", (PyCFunction)PyKAdminObject_get_principal, METH_VARARGS, ""},
-    {"ank", (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
-    {"create_princ", (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
-    {"create_principal", (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
+    {"get_princ",           (PyCFunction)PyKAdminObject_get_principal,    METH_VARARGS, ""},
+    {"get_principal",       (PyCFunction)PyKAdminObject_get_principal,    METH_VARARGS, ""},
+    {"ank",                 (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
+    {"create_princ",        (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
+    {"create_principal",    (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
+    {"list_principals",     (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
     {NULL, NULL, 0, NULL}
 };
 
