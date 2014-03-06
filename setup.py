@@ -9,12 +9,12 @@ from distutils.spawn import spawn
 if newer('getdate.y', 'getdate.c'):
     execute(spawn, (['bison', '-y', '-o', 'getdate.c', 'getdate.y'],))
 
-setup(name='kadmin',
+setup(name='python-kadmin',
       description='Python module for kerberos admin (kadm5)',
       url='https://github.com/russjancewicz/python-kadmin',
       author='Russell Jancewicz',
       author_email='russell.jancewicz@gmail.com',
-      #ext_package="python-kadmin",
+      license='MIT',
       ext_modules=[
           Extension(
               "kadmin",
@@ -40,6 +40,7 @@ setup(name='kadmin',
           "Programming Language :: C",
           "Programming Language :: Python",
           "Programming Language :: YACC",
+          "License :: OSI Approved :: MIT"
           "Topic :: Software Development :: Libraries :: Python Modules",
           "Topic :: System :: Systems Administration :: Authentication/Directory",
           ]

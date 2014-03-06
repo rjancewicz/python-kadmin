@@ -3,13 +3,19 @@ python-kadmin
 
 Python module for kerberos admin (kadm5)
 
-sample usage:
+Examples:
+  Change a password: 
 
 >  import kadmin
+>
+>  kadm = kadmin.init_with_keytab("user@EXAMPLE.COM", "/path/to/file.keytab")
+>  princ = kadm.get_princ("user@EXAMPLE.COM")
+>  princ.change_password("correcthorsebatterystaple")
 
->  k = kadmin.init_with_keytab("user@DOMAIN", "/path/to/file.keytab")
+  List accounts:
 
->  p = k.get_princ("user@DOMAIN")
-
->  p.change_password("correcthorsebatterystaple")
-
+> import kadmin
+>
+> kadm = kadmin.init_with_keytab("user@EXAMPLE.COM", "/path/to/file.keytab")
+> for princ in kadm.principals():
+>   print princ
