@@ -9,7 +9,9 @@ Examples:
 >  import kadmin
 >
 >  kadm = kadmin.init_with_keytab("user@EXAMPLE.COM", "/path/to/file.keytab")
+
 >  princ = kadm.get_princ("user@EXAMPLE.COM")
+
 >  princ.change_password("correcthorsebatterystaple")
 
   List accounts:
@@ -17,5 +19,7 @@ Examples:
 > import kadmin
 >
 > kadm = kadmin.init_with_keytab("user@EXAMPLE.COM", "/path/to/file.keytab")
+
 > for princ in kadm.principals():
+
 >   print princ
