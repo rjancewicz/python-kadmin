@@ -101,7 +101,31 @@ static PyObject *KAdminPrincipal_set_expire(PyKAdminPrincipalObject *self, PyObj
     Py_RETURN_TRUE;
 }
 
+static PyObject *KAdminPrincipal_set_policy(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
+    
+    kadm5_ret_t retval; 
+    char *policy = NULL;
 
+    if (!PyArg_ParseTuple(args, "s", &policy))
+        return NULL;
+    
+    strcpy(self->entry.policy, policy);
+
+    retval = kadm5_modify_principal(self->kadmin->server_handle, &self->entry, KADM5_POLICY);
+    if (retval != 0x0) { PyKAdmin_RaiseKAdminError(retval, "kadm5_modify_principal"); return NULL; }
+
+    Py_RETURN_TRUE;
+}
+
+static PyObject *KAdminPrincipal_clear_policy(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
+    
+    kadm5_ret_t retval; 
+
+    retval = kadm5_modify_principal(self->kadmin->server_handle, &self->entry, KADM5_POLICY_CLR);
+    if (retval != 0x0) { PyKAdmin_RaiseKAdminError(retval, "kadm5_modify_principal"); return NULL; }
+
+    Py_RETURN_TRUE;
+}
 
 
 static PyGetSetDef KAdminPrincipal_getters_setters[] = {
@@ -203,6 +227,8 @@ static PyMethodDef KAdminPrincipal_methods[] = {
     {"randomize_key",   (PyCFunction)KAdminPrincipal_randomize_key,     METH_VARARGS, ""},
     
     {"expire",          (PyCFunction)KAdminPrincipal_set_expire,     METH_VARARGS, ""},
+    {"set_policy",      (PyCFunction)KAdminPrincipal_set_policy,     METH_VARARGS, ""},
+    {"clear_policy",    (PyCFunction)KAdminPrincipal_clear_policy,   METH_VARARGS, ""},
 
     {NULL, NULL, 0, NULL}
 };
