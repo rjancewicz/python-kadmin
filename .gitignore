@@ -22,3 +22,8 @@
 
 # Generated
 getdate.c
+
+# distutils
+MANIFEST
+dist/
+build/

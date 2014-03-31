@@ -10,6 +10,7 @@ if newer('getdate.y', 'getdate.c'):
     execute(spawn, (['bison', '-y', '-o', 'getdate.c', 'getdate.y'],))
 
 setup(name='python-kadmin',
+      version='0.1',
       description='Python module for kerberos admin (kadm5)',
       url='https://github.com/russjancewicz/python-kadmin',
       author='Russell Jancewicz',
@@ -27,7 +28,7 @@ setup(name='python-kadmin',
                   "./PyKAdminIterator.c",
                   "./PyKAdminPrincipalObject.c",
                   "./PyKAdminPolicyObject.c",
-                  "getdate.c"
+                  "./getdate.c"
                   ]
               )
           ],
