@@ -172,7 +172,7 @@ static PyKAdminObject *_kadmin_init_with_password(PyObject *self, PyObject *args
 
     retval = kadm5_init_with_password(kadmin->context, client_name, password, service_name, params, struct_version, api_version, NULL, &kadmin->server_handle);
     if (retval) {
-        printf("kadm5_init_with_password failure: %ld\n", retval);
+        PyKAdmin_RaiseKAdminError(retval, "kadm5_init_with_password");
         PyKAdminObject_destroy(kadmin);
         return NULL;
     }
