@@ -52,35 +52,25 @@ def database_size():
 
 
 class KAdminUnitTests(unittest.TestCase):
-  
-    def setUp(self):
-    
-        try:    
-            kadm = kadmin.init_with_keytab(TEST_PRINCIPAL, TEST_KEYTAB);
-        except kadmin.KAdminError as error: 
-            self.fail("kadmin.init_with_keytab failed");
-     
-        if kadm is None:
-            self.stop()
-      
-        self.kadm = kadm
-    
-    def create_test_accounts(self, kadm):
-
-        for account in TEST_ACCOUNTS:
-            kadm.ank(account)
-
-    def delete_test_accounts(self, kadm):
-
-        for account in TEST_ACCOUNTS:
-            kadm.delprinc(account)
-       
+ 
+    ''' Missing in 2.6 '''
     def assertIsNotNone(self, expr, msg=None):
         self.assertFalse((expr is None), msg)
     
     def assertIsNone(self, expr, msg=None):
         self.assertTrue((expr is None), msg)
 
+    
+    def setUp(self):
+    
+        # let the exception bubble up the test.
+        kadm = kadmin.init_with_keytab(TEST_PRINCIPAL, TEST_KEYTAB);
+        
+        if kadm is None:
+            self.stop()
+      
+        self.kadm = kadm
+       
     def test_init_with_keytab(self):
         
         try:    
@@ -103,7 +93,8 @@ class KAdminUnitTests(unittest.TestCase):
         pre_size = database_size()
 
         try: 
-            self.create_test_accounts(kadm)
+            for account in TEST_ACCOUNTS:
+                kadm.ank(account)
         except:
             self.fail("kadmin.ank rasied an error creating an account.") 
 
@@ -122,7 +113,8 @@ class KAdminUnitTests(unittest.TestCase):
         pre_size = database_size()
 
         try: 
-            self.delete_test_accounts(kadm)
+            for account in TEST_ACCOUNTS:
+                kadm.delprinc(account)
         except:
             self.fail("kadmin.ank rasied an error deleting an account.") 
 
@@ -166,7 +158,7 @@ class KAdminUnitTests(unittest.TestCase):
       
         self.assertEqual(count, size)
         
-    def test_full_iteration(self):
+    def test_unpack_iteration(self):
 
         kadm = self.kadm
         count = 0
@@ -212,7 +204,5 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-sys.exit(0)
 
 
