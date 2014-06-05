@@ -27,3 +27,7 @@ getdate.c
 MANIFEST
 dist/
 build/
+
+kadmin.so
+*.keytab
+
