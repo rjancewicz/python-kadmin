@@ -77,6 +77,9 @@ class KAdminUnitTests(unittest.TestCase):
        
     def assertIsNotNone(self, expr, msg=None):
         self.assertFalse((expr is None), msg)
+    
+    def assertIsNone(self, expr, msg=None):
+        self.assertTrue((expr is None), msg)
 
     def test_init_with_keytab(self):
         
@@ -130,7 +133,7 @@ class KAdminUnitTests(unittest.TestCase):
         delete_test_accounts()
 
 
-    def test_exists(self):
+    def test_double_create(self):
         
         kadm = self.kadm
    
@@ -191,17 +194,20 @@ class KAdminUnitTests(unittest.TestCase):
         
         delete_test_accounts()
         
+    def test_not_exists(self):
         
+        kadm = self.kadm
+    
+        delete_test_accounts()
+
+        account = TEST_ACCOUNTS[0]
+
+        princ = kadm.getprinc(account)
+
+        self.assertIsNone(princ)
 
 def main():
     
-    ''' 
-    pre testing cleanup 
-    '''
-
-    
-
-
     unittest.main()
 
 if __name__ == '__main__':
