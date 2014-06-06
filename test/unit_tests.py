@@ -200,7 +200,12 @@ class KAdminUnitTests(unittest.TestCase):
 
 def main():
     
-    unittest.main()
+    
+
+    confirm = raw_input('run tests against local kadmin server [yes/no] ? ')
+
+    if confirm.lower() == 'yes':
+        unittest.main()
 
 if __name__ == '__main__':
     main()
