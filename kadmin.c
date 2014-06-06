@@ -32,7 +32,7 @@ krb5_ui_4 api_version       = KADM5_API_VERSION_2;
 
 static struct PyMethodDef module_methods[] = {
     
-    {"init_with_creds",     (PyCFunction)_kadmin_init_with_creds,       METH_VARARGS, ""},
+    {"init_with_creds",     (PyCFunction)_kadmin_init_with_creds,       METH_VARARGS, "init_with_creds(ccache_path)"},
     {"init_with_keytab",    (PyCFunction)_kadmin_init_with_keytab,      METH_VARARGS, "init_with_keytab([principal[, keytab_path]] )"},
     {"init_with_password",  (PyCFunction)_kadmin_init_with_password,    METH_VARARGS, ""},
     {"local",     (PyCFunction)_kadmin_local,       METH_VARARGS, ""},
@@ -76,7 +76,38 @@ void _kadmin_init_errors(void) {
 
 static PyKAdminObject *_kadmin_init_with_creds(PyObject *self, PyObject *args) {
     
-    return NULL;
+    PyKAdminObject *kadmin = PyKAdminObject_create();
+    kadm5_ret_t retval;
+
+    krb5_principal principal    = NULL;
+    char *ccache_name           = NULL;
+    char *client_name           = NULL;
+    krb5_ccache cc;
+
+    kadm5_config_params *params = calloc(0x1, sizeof(kadm5_config_params));
+
+    if (!PyArg_ParseTuple(args, "z|z", &ccache_name, &client_name))
+        return NULL; 
+
+
+    retval = krb5_cc_resolve(kadmin->context, ccache_name, &cc);
+    if (retval) { PyKAdmin_RaiseKAdminError(retval, "krb5_cc_resolve"); return NULL; }
+
+    if (client_name == NULL) {
+
+        retval = krb5_cc_get_principal(kadmin->context, cc, &principal);
+        if (retval) { PyKAdmin_RaiseKAdminError(retval, "krb5_cc_get_principal"); return NULL; }
+
+        retval = krb5_unparse_name(kadmin->context, principal, &client_name);
+        if (retval) { PyKAdmin_RaiseKAdminError(retval, "krb5_unparse_name"); return NULL; }
+    }
+
+    //printf("Authenticating as principal %s with existing credentials.\n", client_name);
+
+    retval = kadm5_init_with_creds(kadmin->context, client_name, cc, service_name, params, struct_version, api_version, NULL, &kadmin->server_handle);
+    if (retval) { PyKAdmin_RaiseKAdminError(retval, "kadm5_init_with_creds"); return NULL; }
+
+    return kadmin;
 }
 
 
