@@ -5,8 +5,6 @@
 #include "PyKAdminPolicyObject.h"
 #include "PyKAdminErrors.h"
 
-#define IS_NULL(ptr) (ptr == NULL)
-
 static void PyKAdminIterator_dealloc(PyKAdminIterator *self) {
       
     kadm5_free_name_list(self->kadmin->server_handle, self->names, self->count);
@@ -21,7 +19,7 @@ static int PyKAdminIterator_init(PyKAdminIterator *self, PyObject *args, PyObjec
     self->count = 0x0; 
     self->index = 0x0;
 
-    if (!IS_NULL(self->kadmin->server_handle)) {
+    if (self->kadmin->server_handle) {
 
         if (self->mode & iterate_principals) {  
             kadm5_get_principals(self->kadmin->server_handle, self->match, &(self->names), &(self->count));
@@ -112,14 +110,12 @@ PyKAdminIterator *PyKAdminIterator_create(PyKAdminObject *kadmin, PyKadminIterat
 
     PyKAdminIterator *iter = PyObject_New(PyKAdminIterator, &PyKAdminIterator_Type);
 
-
-    if (!IS_NULL(iter)) {
+    if (iter) {
         Py_XINCREF(kadmin);
-
         iter->kadmin = kadmin;
         iter->mode   = mode;
         iter->match  = match;
-    }        
+    }
 
     PyKAdminIterator_init(iter, NULL, NULL);
     Py_XINCREF(iter);

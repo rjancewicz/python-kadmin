@@ -30,14 +30,23 @@ static void PyKAdminObject_dealloc(PyKAdminObject *self) {
 static PyObject *PyKAdminObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
 
     PyKAdminObject *self;
-    kadm5_ret_t retval;
+    kadm5_ret_t retval = 0;
 
     self = (PyKAdminObject *)type->tp_alloc(type, 0);
 
-    if (!IS_NULL(self)) {
-        if ( (retval = krb5_init_context(&(self->context))) ) {
+    if (self) {
+        retval = krb5_init_context(&self->context);
+
+        if (retval) {
             Py_DECREF(self);
+            PyKAdmin_RaiseKAdminError(retval, "kadm5_init_with_password");
             return NULL;
+        }
+
+        // attempt to load the default realm for this connection
+        krb5_get_default_realm(self->context, &self->realm);
+        if (!self->realm) {
+            // todo : fail 
         }
     }
 
@@ -122,11 +131,13 @@ static PyKAdminPrincipalObject *PyKAdminObject_get_principal(PyKAdminObject *sel
     PyKAdminPrincipalObject *principal = NULL;
     char *client_name; 
 
-    if (!PyArg_ParseTuple(args, "s", &client_name))
+    if (!PyArg_ParseTuple(args, "s", &client_name)) {
         return NULL;
+    }
 
     if (!IS_NULL(self->server_handle)) {
         principal = PyKAdminPrincipalObject_create(self, client_name);
+
     } 
 
     return principal;

@@ -145,7 +145,7 @@ static PyObject *_KAdminPrincipal_load_principal(PyKAdminPrincipalObject *self, 
     krb5_error_code errno;
     krb5_principal parsed_name;
 
-    if (!IS_NULL(client_name)) {
+    if (client_name) {
 
         errno = krb5_parse_name(self->kadmin->context, client_name, &parsed_name);
 
@@ -153,13 +153,17 @@ static PyObject *_KAdminPrincipal_load_principal(PyKAdminPrincipalObject *self, 
            printf("Failed to parse princ name %d\n", errno);
         }
     
-        retval = kadm5_get_principal(self->kadmin->server_handle, parsed_name, &self->entry, KADM5_PRINCIPAL_NORMAL_MASK);
+        retval = kadm5_get_principal(self->kadmin->server_handle, parsed_name, &self->entry, 0x0);
         if (retval != 0x0) { PyKAdmin_RaiseKAdminError(retval, "kadm5_get_principal"); return NULL; }
 
         krb5_free_principal(self->kadmin->context, parsed_name);
+    
+        Py_RETURN_TRUE;
     }
 
-    Py_RETURN_TRUE;
+    // TODO: raise exception 
+    return NULL;
+    //Py_RETURN_FALSE;
 }
 
 static PyObject *_KAdminPrincipal_refresh_principal(PyKAdminPrincipalObject *self) {
