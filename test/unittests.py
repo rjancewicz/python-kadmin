@@ -1,15 +1,19 @@
 
+import time
 import sys
 import kadmin
 import kadmin_local
 import unittest
 import subprocess
+import logging
 
 TEST_PRINCIPAL = "test/admin@EXAMPLE.COM"
 TEST_KEYTAB    = "./test.keytab"
 TEST_CCACHE    = "./krb5cc_test"
 TEST_PASSWORD  = "example"
 
+TEST_LOG       = "./unittests.log"
+LOG_FORMAT     = "%(asctime)-15s %(message)s"
 
 TEST_ACCOUNTS = ["test{0:02d}@EXAMPLE.COM".format(i) for i in range(100)]
 
@@ -382,8 +386,16 @@ class KAdminLocalUnitTests(unittest.TestCase):
    
         size = database_size()     
 
+        time_s = time.time()
+
         for princ in kadm.principals(unpack=True):
             count += 1
+
+        time_f = time.time()
+
+        time_d = time_f - time_s; 
+
+        logging.info("unpacked iteration: {0} principals unpacked in {1} seconds [{2} per second].".format(count, time_d, (count/time_d)))
         
         self.assertEqual(count, size)
     
@@ -417,11 +429,14 @@ class KAdminLocalUnitTests(unittest.TestCase):
 
 
 def main():
-    create_ccache()
-
+    
     confirm = raw_input('run tests against local kadmin server [yes/no] ? ')
 
     if confirm.lower() == 'yes':
+        create_ccache()
+
+        logging.basicConfig(filename=TEST_LOG, format=LOG_FORMAT, level=logging.DEBUG)
+
         unittest.main()
 
 if __name__ == '__main__':
