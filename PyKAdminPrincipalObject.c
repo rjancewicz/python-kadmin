@@ -153,7 +153,7 @@ static PyObject *_KAdminPrincipal_load_principal(PyKAdminPrincipalObject *self, 
            printf("Failed to parse princ name %d\n", errno);
         }
     
-        retval = kadm5_get_principal(self->kadmin->server_handle, parsed_name, &self->entry, 0x0);
+        retval = kadm5_get_principal(self->kadmin->server_handle, parsed_name, &self->entry, KADM5_PRINCIPAL_NORMAL_MASK);
         if (retval != 0x0) { PyKAdmin_RaiseKAdminError(retval, "kadm5_get_principal"); return NULL; }
 
         krb5_free_principal(self->kadmin->context, parsed_name);
@@ -287,18 +287,19 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_create(PyKAdminObject *kadmin, 
     PyKAdminPrincipalObject *principal = NULL; 
 
     principal = (PyKAdminPrincipalObject *)KAdminPrincipal_new(&PyKAdminPrincipalObject_Type, NULL, NULL);
-    
-    if (!IS_NULL(principal)) {
-        Py_XINCREF(kadmin);
+
+    if (principal) {
         principal->kadmin = kadmin;
-    }
+        Py_XINCREF(kadmin);
 
-    PyObject *result = _KAdminPrincipal_load_principal(principal, client_name);
+        PyObject *result = _KAdminPrincipal_load_principal(principal, client_name);
 
-    if (IS_NULL(result)) {
-        KAdminPrincipal_dealloc(principal);
-        principal = (PyKAdminPrincipalObject *)Py_None;
-        Py_XINCREF(Py_None);
+        if (!result) {
+            KAdminPrincipal_dealloc(principal);
+            principal = (PyKAdminPrincipalObject *)Py_None;
+            Py_XDECREF(kadmin);
+            Py_XINCREF(Py_None);
+        }
     }
 
     return principal;
