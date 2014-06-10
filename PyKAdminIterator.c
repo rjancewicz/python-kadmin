@@ -22,9 +22,9 @@ static int PyKAdminIterator_init(PyKAdminIterator *self, PyObject *args, PyObjec
     if (self->kadmin->server_handle) {
 
         if (self->mode & iterate_principals) {  
-            kadm5_get_principals(self->kadmin->server_handle, self->match, &(self->names), &(self->count));
+            kadm5_get_principals(self->kadmin->server_handle, self->match, &self->names, &self->count);
         } else if (self->mode & iterate_policies) {
-            kadm5_get_policies(self->kadmin->server_handle, self->match, &(self->names), &(self->count));
+            kadm5_get_policies(self->kadmin->server_handle, self->match, &self->names, &self->count);
         }
     }
 
