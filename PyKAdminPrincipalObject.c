@@ -8,6 +8,11 @@
 #define IS_NULL(ptr) (ptr == NULL)
 
 static void KAdminPrincipal_dealloc(PyKAdminPrincipalObject *self) {
+
+    // If policy string was allocated, free it
+    if (self->entry.policy != NULL) { 
+        free(self->entry.policy);
+    }
     
     kadm5_free_principal_ent(self->kadmin->server_handle, &self->entry);
 
@@ -128,7 +133,13 @@ static PyObject *KAdminPrincipal_set_policy(PyKAdminPrincipalObject *self, PyObj
     if (!PyArg_ParseTuple(args, "s", &policy))
         return NULL;
     
-    strcpy(self->entry.policy, policy);
+    // If we already allocated a policy string, free it
+    if (self->entry.policy != NULL) { 
+        free(self->entry.policy);
+    }
+    
+    // Copy the string so we can use it after Python frees it
+    self->entry.policy = strdup(policy);
 
     retval = kadm5_modify_principal(self->kadmin->server_handle, &self->entry, KADM5_POLICY);
     if (retval != 0x0) { PyKAdmin_RaiseKAdminError(retval, "kadm5_modify_principal"); return NULL; }
