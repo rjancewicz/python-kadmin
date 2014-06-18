@@ -9,11 +9,6 @@
 
 static void KAdminPrincipal_dealloc(PyKAdminPrincipalObject *self) {
 
-    // If policy string was allocated, free it
-    if (self->entry.policy != NULL) { 
-        free(self->entry.policy);
-    }
-    
     kadm5_free_principal_ent(self->kadmin->server_handle, &self->entry);
 
     Py_XDECREF(self->kadmin);
