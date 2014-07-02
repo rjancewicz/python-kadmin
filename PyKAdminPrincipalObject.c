@@ -5,6 +5,7 @@
 #include "PyKAdminPrincipalObject.h"
 #include "PyKAdminPolicyObject.h"
 
+
 #define IS_NULL(ptr) (ptr == NULL)
 
 static void KAdminPrincipal_dealloc(PyKAdminPrincipalObject *self) {
@@ -281,7 +282,6 @@ PyTypeObject PyKAdminPrincipalObject_Type = {
 };
 
 
-
 PyKAdminPrincipalObject *PyKAdminPrincipalObject_create(PyKAdminObject *kadmin, char *client_name) {
 
     PyKAdminPrincipalObject *principal = NULL; 
@@ -308,4 +308,6 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_create(PyKAdminObject *kadmin, 
 void KAdminPrincipal_destroy(PyKAdminPrincipalObject *self) {
     KAdminPrincipal_dealloc(self);
 }
+
+
 

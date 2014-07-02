@@ -1,4 +1,7 @@
 
+#ifndef PYKADMINPRINCIPALOBJECT_H
+#define PYKADMINPRINCIPALOBJECT_H
+
 #include <Python.h>
 #include <kadm5/admin.h>
 #include <krb5/krb5.h>
@@ -18,3 +21,5 @@ PyTypeObject PyKAdminPrincipalObject_Type;
 
 PyKAdminPrincipalObject *PyKAdminPrincipalObject_create(PyKAdminObject *kadmin, char *client_name);
 void KAdminPrincipal_destroy(PyKAdminPrincipalObject *self); 
+
+#endif

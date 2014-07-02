@@ -5,6 +5,8 @@
 #include "PyKAdminPrincipalObject.h"
 #include "PyKAdminPolicyObject.h"
 
+#include "PyKAdminCommon.h"
+
 #define IS_NULL(ptr) (ptr == NULL)
 
 static void PyKAdminObject_dealloc(PyKAdminObject *self) {
@@ -178,6 +180,103 @@ static PyKAdminIterator *PyKAdminObject_policy_iter(PyKAdminObject *self, PyObje
     return PyKAdminIterator_create(self, mode, match);
 }
 
+/*
+static krb5_error_code
+kdb_iter_func(krb5_pointer data, krb5_db_entry *kdb)
+{
+    iter_data *id = (iter_data *) data;
+
+    (*(id->func))(id->data, kdb->princ);
+
+    return(0);
+}
+
+krb5_error_code
+kdb_iter_entry(kadm5_server_handle_t handle, char *match_entry,
+               void (*iter_fct)(void *, krb5_principal), void *data)
+{
+    iter_data id;
+    krb5_error_code ret;
+
+    id.func = iter_fct;
+    id.data = data;
+
+    ret = krb5_db_iterate(handle->context, match_entry, kdb_iter_func, &id);
+    if (ret)
+        return(ret);
+
+    return(0);
+}
+*/
+
+static krb5_error_code kdb_iter_func(void *data, krb5_db_entry *kdb) {
+
+    PyKAdminObject *self = (PyKAdminObject *)data;
+
+    //char *name = NULL;
+    PyObject *result = NULL;
+
+    if (krb5_unparse_name(self->context, kdb->princ, &name) != 0)
+        return 1;
+
+    //PyKAdminPrincipalObject *principal = PyKAdminPrincipalObject_create(self, NULL);
+
+    //kadm5_principal_ent_rec *entry = malloc(sizeof(kadm5_principal_ent_rec));
+
+
+        //PyKadmin_kadm_entry_from_kdb_entry(self, kdb, entry, KADM5_PRINCIPAL_NORMAL_MASK);
+
+        //memcpy(&principal->entry, entry, sizeof(kadm5_principal_ent_rec));
+
+        //PyObject *args = Py_BuildValue("(O)", principal);
+
+        //principal->entry.principal = kdb->princ;
+
+        PyObject *args = Py_BuildValue("(s)", name);
+
+        if (self->each_callback) {
+            //result = PyObject_CallFunctionObjArgs(self->each_callback, principal, NULL);
+            result = PyObject_CallObject(self->each_callback, args);
+            Py_XDECREF(args);
+            if (!result) {
+                printf("callback failed\n");
+            }
+        }
+    
+    //KAdminPrincipal_destroy(principal);
+//
+    //printf("%s\n", name);
+
+    return 0;
+
+}
+
+
+static PyObject *PyKAdminObject_each_principal(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
+
+    krb5_error_code ret = 0; 
+
+    if (!PyArg_ParseTuple(args, "O!", &PyFunction_Type, &self->each_callback))
+        return NULL;
+
+    // we need to hold the refernce to the object while we plan on using it
+    Py_XINCREF(self->each_callback);
+    // TODO kdb5_lock(excusive)
+    ret = krb5_db_iterate(self->context, NULL, kdb_iter_func, self);
+    // TODO kdb5_unlock
+    Py_XDECREF(self->each_callback);
+
+    if (ret)
+        return NULL;
+
+    Py_RETURN_TRUE;
+
+}
+
+static PyObject *PyKAdminObject_each_policy(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
+    // todo
+    return NULL;
+}
 
 
 static PyKAdminPrincipalObject *PyKAdminObject_list_principals(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
@@ -198,6 +297,10 @@ static PyMethodDef PyKAdminObject_methods[] = {
     {"list_principals",     (PyCFunction)PyKAdminObject_list_principals,  METH_VARARGS, ""},
     {"principals",          (PyCFunction)PyKAdminObject_principal_iter,   (METH_VARARGS | METH_KEYWORDS), ""},
     {"policies",            (PyCFunction)PyKAdminObject_policy_iter,      (METH_VARARGS | METH_KEYWORDS), ""},
+    
+    {"each_principal",      (PyCFunction)PyKAdminObject_each_principal,   METH_VARARGS, ""},
+    {"each_policy",         (PyCFunction)PyKAdminObject_each_policy,      METH_VARARGS, ""},
+
     {NULL, NULL, 0, NULL}
 };
 

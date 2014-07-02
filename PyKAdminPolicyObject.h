@@ -1,4 +1,7 @@
 
+#ifndef PYKADMINPOLICYOBJECT_H
+#define PYKADMINPOLICYOBJECT_H
+
 #include <Python.h>
 #include <kadm5/admin.h>
 #include <krb5/krb5.h>
@@ -18,3 +21,5 @@ PyTypeObject PyKAdminPolicyObject_Type;
 
 PyKAdminPolicyObject *PyKAdminPolicyObject_create(PyKAdminObject *kadmin, char *name);
 void PyKAdminPolicyObject_destroy(PyKAdminPolicyObject *self);
+
+#endif

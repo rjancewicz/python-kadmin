@@ -1,4 +1,7 @@
 
+#ifndef PYKADMINITERATOROBJECT_H
+#define PYKADMINITERATOROBJECT_H
+
 #include <Python.h>
 #include <kadm5/admin.h>
 #include <krb5/krb5.h>
@@ -25,9 +28,14 @@ typedef struct {
 	
 	PyKAdminObject *kadmin;
 
+	PyObject *each_principal_func;
+	PyObject *each_policy_func;
+
 } PyKAdminIterator;
 
 PyTypeObject PyKAdminIterator_Type;
 
 PyKAdminIterator *PyKAdminIterator_create(PyKAdminObject *kadmin, PyKadminIteratorModes mode, char *filter);
 void PyKAdminIterator_destroy(PyKAdminIterator *self);
+
+#endif

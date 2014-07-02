@@ -1,4 +1,7 @@
 
+#ifndef PYKADMINOBJECT_H
+#define PYKADMINOBJECT_H
+
 #include <Python.h>
 #include <kadm5/admin.h>
 #include <krb5/krb5.h>
@@ -13,8 +16,12 @@ typedef struct {
     void *server_handle;
     char *realm;
 
+    PyObject *each_callback;
+    
 } PyKAdminObject;
 
 PyTypeObject PyKAdminObject_Type;
 PyKAdminObject *PyKAdminObject_create(void);
 void PyKAdminObject_destroy(PyKAdminObject *self);
+
+#endif

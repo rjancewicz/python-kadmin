@@ -27,6 +27,7 @@ setup(name='python-kadmin',
                   "./PyKAdminIterator.c",
                   "./PyKAdminPrincipalObject.c",
                   "./PyKAdminPolicyObject.c",
+                  "./PyKAdminCommon.c",
                   "./getdate.c"
                   ]
               )
@@ -65,6 +66,7 @@ setup(name='python-kadmin-local',
                   "./PyKAdminIterator.c",
                   "./PyKAdminPrincipalObject.c",
                   "./PyKAdminPolicyObject.c",
+                  "./PyKAdminCommon.c",
                   "./getdate.c"
                   ],
               define_macros=[('KADMIN_LOCAL', '')]
