@@ -15,7 +15,7 @@ typedef struct {
     krb5_context context; 
     void *server_handle;
     char *realm;
-
+    
     PyObject *each_callback;
     
 } PyKAdminObject;

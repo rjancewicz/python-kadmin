@@ -40,21 +40,21 @@ static PyObject *PyKAdminIterator_next(PyKAdminIterator *self) {
 
         char *name = self->names[self->index];
 
-        if (self->mode & iterate_unpack) {
+        /*if (self->mode & iterate_unpack) {
             if (self->mode & iterate_principals) {
-                next = (PyObject *)PyKAdminPrincipalObject_create(self->kadmin, name);
+                next = (PyObject *)PyKAdminPrincipalObject_principal_with_name(self->kadmin, name);
             } else if (self->mode & iterate_policies) {
                 next = (PyObject *)PyKAdminPolicyObject_create(self->kadmin, name);
                 // todo need policy constructor
-                //next = PyKAdminPrincipalObject_create(self->kadmin, name);
+                //next = PyKAdminPrincipalObject_principal_with_name(self->kadmin, name);
                 // for the time we will use a name string as a placeholder so NULL isn't returned
                 next = Py_BuildValue("s", name);
             } else {
                 next = Py_BuildValue("s", name);
             }
-        } else {
+        } else {*/
             next = Py_BuildValue("s", name);
-        }
+        //}
 
         self->index++;
     }

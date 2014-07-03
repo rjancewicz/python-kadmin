@@ -28,6 +28,7 @@ setup(name='python-kadmin',
                   "./PyKAdminPrincipalObject.c",
                   "./PyKAdminPolicyObject.c",
                   "./PyKAdminCommon.c",
+                  "./PyKAdminXDR.c",
                   "./getdate.c"
                   ]
               )
@@ -67,6 +68,7 @@ setup(name='python-kadmin-local',
                   "./PyKAdminPrincipalObject.c",
                   "./PyKAdminPolicyObject.c",
                   "./PyKAdminCommon.c",
+                  "./PyKAdminXDR.c",
                   "./getdate.c"
                   ],
               define_macros=[('KADMIN_LOCAL', '')]

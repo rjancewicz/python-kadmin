@@ -18,8 +18,13 @@ typedef struct {
 } PyKAdminPrincipalObject;
 
 PyTypeObject PyKAdminPrincipalObject_Type;
+PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_name(PyKAdminObject *kadmin, char *client_name);
+PyKAdminPrincipalObject *PyKadminPrincipalObject_principal_with_db_entry(PyKAdminObject *kadmin, krb5_db_entry *kdb);
+PyKAdminPrincipalObject *PyKadminPrincipalObject_principal_with_kadm_entry(PyKAdminObject *kadmin, kadm5_principal_ent_rec *entry);
 
-PyKAdminPrincipalObject *PyKAdminPrincipalObject_create(PyKAdminObject *kadmin, char *client_name);
+// create will be replaced with load_princ_w_name
+PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_name(PyKAdminObject *kadmin, char *client_name);
 void KAdminPrincipal_destroy(PyKAdminPrincipalObject *self); 
+
 
 #endif

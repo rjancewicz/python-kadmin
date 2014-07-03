@@ -11,8 +11,8 @@
 
 typedef enum {
 	iterate_principals 	= 0x1,
-	iterate_policies	= 0x2,
-	iterate_unpack		= 0x4
+	iterate_policies	= 0x2
+//	iterate_unpack		= 0x4
 } PyKadminIteratorModes;
 
 typedef struct {
@@ -27,9 +27,6 @@ typedef struct {
 	char **names;
 	
 	PyKAdminObject *kadmin;
-
-	PyObject *each_principal_func;
-	PyObject *each_policy_func;
 
 } PyKAdminIterator;
 
