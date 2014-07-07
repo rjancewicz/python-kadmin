@@ -41,7 +41,31 @@ for princ in kadm.principals('r*@EXAMPLE.COM'):
   # princ is a string starting with 'r' and ending with '@EXAMPLE.COM'
   print princ
 
-for princ in kadm.principals('*', unpack=True):
-  # princ is a kadmin principal object
-  print princ
+# unpacked iteration
+#  prints each principal, data is optiona
+
+def callback_a(princ, data):
+	print(princ)
+
+def callback_b(princ, data):
+	print("{0}, {1}".format(data, princ))
+
+# invoke callback_a for each principal, equivilent of the above iteration.
+kadm.each_principal(callback_a)
+
+# invoke callback_b for each principal resulting in "Hello, principal@EXAMPLE.COM"
+kadm.each_principal(callback_b, "Hello ")
+
+#
+# WARNING: unpack iteration deprecated in favor of "each iteration" with callbacks.
+#		   unless run on the default backend via kadmin_local unpack iteration is *extremely* slow.
+#
+
+# old style unpack iteration [updated]
+# replaces: kadm.principals('*', unpack=True)
+
+for princ in kadm.principals('*'):
+	principal = kadm.get_princ(princ)
+	# use principal as needed
+	
 ```

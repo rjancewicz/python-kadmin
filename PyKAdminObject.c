@@ -218,7 +218,7 @@ static PyObject *PyKAdminObject_each_principal(PyKAdminObject *self, PyObject *a
     kadm5_ret_t lock = 0; 
 
 
-    static char *kwlist[] = {"", "args", "match", NULL};
+    static char *kwlist[] = {"", "arg", "match", NULL};
     
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|Oz", kwlist, &PyFunction_Type, &self->each_principal.callback, &self->each_principal.arg, &match))
         return NULL;
