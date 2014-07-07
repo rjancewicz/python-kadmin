@@ -18,7 +18,7 @@ setup(name='python-kadmin',
       ext_modules=[
           Extension(
               "kadmin",
-              libraries=["krb5", "kadm5clnt"],
+              libraries=["krb5", "kadm5clnt", "kdb5"],
               include_dirs=["/usr/include/", "/usr/include/et/"],
               sources=[
                   "./kadmin.c",
@@ -27,8 +27,11 @@ setup(name='python-kadmin',
                   "./PyKAdminIterator.c",
                   "./PyKAdminPrincipalObject.c",
                   "./PyKAdminPolicyObject.c",
+                  "./PyKAdminCommon.c",
+                  "./PyKAdminXDR.c",
                   "./getdate.c"
-                  ]
+                  ],
+              extra_compile_args=["-O0"]
               )
           ],
       classifiers=[
@@ -56,7 +59,7 @@ setup(name='python-kadmin-local',
       ext_modules=[
           Extension(
               "kadmin_local",
-              libraries=["krb5", "kadm5srv"],
+              libraries=["krb5", "kadm5srv", "kdb5"],
               include_dirs=["/usr/include/", "/usr/include/et/"],
               sources=[
                   "./kadmin.c",
@@ -65,6 +68,8 @@ setup(name='python-kadmin-local',
                   "./PyKAdminIterator.c",
                   "./PyKAdminPrincipalObject.c",
                   "./PyKAdminPolicyObject.c",
+                  "./PyKAdminCommon.c",
+                  "./PyKAdminXDR.c",
                   "./getdate.c"
                   ],
               define_macros=[('KADMIN_LOCAL', '')]

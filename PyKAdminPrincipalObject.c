@@ -5,6 +5,8 @@
 #include "PyKAdminPrincipalObject.h"
 #include "PyKAdminPolicyObject.h"
 
+#include "PyKAdminCommon.h"
+
 #define IS_NULL(ptr) (ptr == NULL)
 
 static void KAdminPrincipal_dealloc(PyKAdminPrincipalObject *self) {
@@ -35,19 +37,29 @@ static int KAdminPrincipal_init(PyKAdminPrincipalObject *self, PyObject *args, P
 
 static int KAdminPrincipal_print(PyKAdminPrincipalObject *self, FILE *file, int flags){
 
+    krb5_error_code retval = 0; 
     char *client_name = NULL;
+
+    if (self->kadmin) {
+        
+        retval = krb5_unparse_name(self->kadmin->context, self->entry.principal, &client_name);
+        /*if (retval) {
+            printf("%d\n", retval);
+        }*/
+
+        printf("<kadmin:principal> %s", client_name);
+    }
+
+    if (client_name)
+        free(client_name);
     
-    krb5_unparse_name(self->kadmin->context, self->entry.principal, &client_name);
-
-    printf("<kadmin:principal> %s", client_name);
-
-    free(client_name);
     return 0;
 }
 
 
 
 static PyMemberDef KAdminPrincipal_members[] = {
+
 
     {"last_password_change",        T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, last_pwd_change),       READONLY, ""},
     {"expire_time",                 T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, princ_expire_time),     READONLY, ""},
@@ -63,7 +75,7 @@ static PyMemberDef KAdminPrincipal_members[] = {
     {"key_version_number",          T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, kvno),                  READONLY, ""},
     {"master_key_version_number",   T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, mkvno),                 READONLY, ""},
 
-    {"policy",                      T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, policy),                READONLY, ""},
+    {"policy",                      T_STRING, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, policy),                READONLY, ""},
     
     {NULL}
 };
@@ -137,7 +149,6 @@ static PyGetSetDef KAdminPrincipal_getters_setters[] = {
     {"principal", (getter)PyKAdminPrincipal_get_principal, NULL, "Kerberos Principal"},
     {NULL}
 };
-
 
 static PyObject *_KAdminPrincipal_load_principal(PyKAdminPrincipalObject *self, char *client_name) {
 
@@ -223,6 +234,23 @@ static PyObject *KAdminPrincipal_randomize_key(PyKAdminPrincipalObject *self, Py
     return Py_True;
 }
 
+static PyObject *KAdminPrincipal_get_name(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
+
+    krb5_error_code retval = 0; 
+    char *client_name = NULL;
+    PyObject *name = NULL;
+
+    if (self->kadmin) {
+        
+        retval = krb5_unparse_name(self->kadmin->context, self->entry.principal, &client_name);
+        if (retval) {}
+
+        name = Py_BuildValue("z", client_name);
+
+    }
+    
+    return name;
+}
 
 static PyMethodDef KAdminPrincipal_methods[] = {
     {"cpw",             (PyCFunction)KAdminPrincipal_change_password,   METH_VARARGS, ""},
@@ -233,6 +261,8 @@ static PyMethodDef KAdminPrincipal_methods[] = {
     {"expire",          (PyCFunction)KAdminPrincipal_set_expire,     METH_VARARGS, ""},
     {"set_policy",      (PyCFunction)KAdminPrincipal_set_policy,     METH_VARARGS, ""},
     {"clear_policy",    (PyCFunction)KAdminPrincipal_clear_policy,   METH_VARARGS, ""},
+
+    {"name",            (PyCFunction)KAdminPrincipal_get_name,        METH_VARARGS, ""},
 
     {NULL, NULL, 0, NULL}
 };
@@ -281,6 +311,75 @@ PyTypeObject PyKAdminPrincipalObject_Type = {
 };
 
 
+PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_name(PyKAdminObject *kadmin, char *client_name) {
+
+    PyKAdminPrincipalObject *principal = (PyKAdminPrincipalObject *)KAdminPrincipal_new(&PyKAdminPrincipalObject_Type, NULL, NULL);
+
+    if (principal) {
+
+        Py_XINCREF(kadmin);
+        principal->kadmin = kadmin;
+
+        /* todo : fetch kadmin entry */
+        PyObject *result = _KAdminPrincipal_load_principal(principal, client_name);
+
+        if (!result) {
+            Py_XDECREF(kadmin);
+            Py_XINCREF(Py_None);
+            KAdminPrincipal_dealloc(principal);
+            principal = (PyKAdminPrincipalObject *)Py_None;
+        }
+
+    }
+
+    return principal;
+}
+
+PyKAdminPrincipalObject *PyKadminPrincipalObject_principal_with_db_entry(PyKAdminObject *kadmin, krb5_db_entry *kdb) {
+
+    krb5_error_code retval;
+
+    PyKAdminPrincipalObject *principal = (PyKAdminPrincipalObject *)KAdminPrincipal_new(&PyKAdminPrincipalObject_Type, NULL, NULL);
+
+    if (kdb) {
+
+        Py_XINCREF(kadmin);
+        principal->kadmin = kadmin;
+
+        retval = pykadmin_kadm_from_kdb(kadmin, kdb, &principal->entry, KADM5_PRINCIPAL_NORMAL_MASK);
+
+        if (retval) {
+
+        } 
+    }
+
+    return principal;
+}
+
+/*
+PyKAdminPrincipalObject *PyKadminPrincipalObject_principal_with_kadm_entry(PyKAdminObject *kadmin, kadm5_principal_ent_rec *entry) {
+
+    krb5_error_code retval;
+
+    PyKAdminPrincipalObject *principal = (PyKAdminPrincipalObject *)KAdminPrincipal_new(&PyKAdminPrincipalObject_Type, NULL, NULL);
+
+    if (entry) {
+
+        Py_XINCREF(kadmin);
+        principal->kadmin = kadmin;
+
+        //retval = pykadmin_copy_kadm_ent_rec(kadmin, entry, &principal->entry);
+
+        if (retval) {
+
+        }
+
+
+    }
+
+    return principal;
+}
+*/
 
 PyKAdminPrincipalObject *PyKAdminPrincipalObject_create(PyKAdminObject *kadmin, char *client_name) {
 
@@ -308,4 +407,6 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_create(PyKAdminObject *kadmin, 
 void KAdminPrincipal_destroy(PyKAdminPrincipalObject *self) {
     KAdminPrincipal_dealloc(self);
 }
+
+
 

@@ -1,4 +1,7 @@
 
+#ifndef PYKADMINERRORS_H
+#define PYKADMINERRORS_H
+
 #include <Python.h>
 #include <kadm5/admin.h>
 #include <kadm5/kadm_err.h>
@@ -15,3 +18,5 @@ PyObject *KAdminErrorsDict;
 void PyKAdminError_init(PyObject *module);
 
 PyObject *PyKAdmin_RaiseKAdminError(kadm5_ret_t retval, char *caller);
+
+#endif
