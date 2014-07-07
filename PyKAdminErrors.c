@@ -1,8 +1,6 @@
 
 #include "PyKAdminErrors.h"
 
-#define IS_NULL(ptr) (ptr == NULL)
-
 void PyKAdminError_insert(PyObject *module, kadm5_ret_t retval, char *error_name, char *error_string) {
     
     PyObject *error_number        = PyLong_FromUnsignedLong(retval);
@@ -112,17 +110,17 @@ PyObject *PyKAdmin_RaiseKAdminError(kadm5_ret_t retval, char *caller) {
 
     PyDict_SetItemString(error_dict, kERROR_NUMBER, error_number);
 
-    if (!IS_NULL(KAdminErrorsDict)) {
+    if (KAdminErrorsDict) {
         
         error_tuple = PyDict_GetItem(KAdminErrorsDict, error_number);
 
-        if (!IS_NULL(error_tuple) && (PyTuple_GET_SIZE(error_tuple) >= 2)) {
+        if (error_tuple && (PyTuple_GET_SIZE(error_tuple) >= 2)) {
             error_object = PyTuple_GetItem(error_tuple, 0x0); 
             error_string = PyTuple_GetItem(error_tuple, 0x1);
         }
     }
 
-    if (!IS_NULL(error_string)) {
+    if (error_string) {
         PyDict_SetItemString(error_dict, kERROR_STRING, error_string);
     } else {
         error_string = PyString_FromString(caller);
@@ -131,7 +129,7 @@ PyObject *PyKAdmin_RaiseKAdminError(kadm5_ret_t retval, char *caller) {
     }
 
 
-    if (!IS_NULL(error_object)) {
+    if (error_object) {
         PyErr_SetObject(error_object, error_dict);
     } else {
         PyErr_SetObject(KAdminError, error_dict);

@@ -5,8 +5,6 @@
 #include "PyKAdminPrincipalObject.h"
 #include "PyKAdminPolicyObject.h"
 
-#define IS_NULL(ptr) (ptr == NULL)
-
 static void PyKAdminPolicyObject_dealloc(PyKAdminPolicyObject *self) {
     
     self->ob_type->tp_free((PyObject*)self);
@@ -85,7 +83,7 @@ PyKAdminPolicyObject *PyKAdminPolicyObject_create(PyKAdminObject *kadmin, char *
 
     policy = (PyKAdminPolicyObject *)PyKAdminPolicyObject_new(&PyKAdminPolicyObject_Type, NULL, NULL);
     
-    if (!IS_NULL(policy)) {
+    if (policy) {
         Py_XINCREF(kadmin);
         policy->kadmin = kadmin;
     }

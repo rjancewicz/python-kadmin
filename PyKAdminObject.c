@@ -8,24 +8,22 @@
 #include "PyKAdminCommon.h"
 
 
-#define IS_NULL(ptr) (ptr == NULL)
-
 static void PyKAdminObject_dealloc(PyKAdminObject *self) {
     
     kadm5_ret_t retval;
 
     krb5_db_unlock(self->context);
 
-    if (!IS_NULL(self->server_handle)) {
+    if (self->server_handle) {
         retval = kadm5_destroy(self->server_handle);
         if (retval) {}
     }
     
-    if (!IS_NULL(self->context)) {
+    if (self->context) {
         krb5_free_context(self->context);
     }
 
-    if (!IS_NULL(self->realm)) {
+    if (self->realm) {
         free(self->realm);
     }
 
@@ -79,7 +77,7 @@ static PyObject *PyKAdminObject_delete_principal(PyKAdminObject *self, PyObject 
     if (!PyArg_ParseTuple(args, "s", &client_name))
         return NULL;
 
-    if (!IS_NULL(self->server_handle)) {
+    if (self->server_handle) {
 
         retval = krb5_parse_name(self->context, client_name, &princ);
         if (retval != 0x0) { PyKAdmin_RaiseKAdminError(retval, "krb5_parse_name"); return NULL; }
@@ -144,7 +142,7 @@ static PyKAdminPrincipalObject *PyKAdminObject_get_principal(PyKAdminObject *sel
         return NULL;
     }
 
-    if (!IS_NULL(self->server_handle)) {
+    if (self->server_handle) {
         principal = PyKAdminPrincipalObject_principal_with_name(self, client_name);
 
     } 

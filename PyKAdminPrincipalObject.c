@@ -7,7 +7,6 @@
 
 #include "PyKAdminCommon.h"
 
-#define IS_NULL(ptr) (ptr == NULL)
 
 static void KAdminPrincipal_dealloc(PyKAdminPrincipalObject *self) {
     
