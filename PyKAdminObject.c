@@ -201,7 +201,6 @@ static int kdb_iter_princs(void *data, krb5_db_entry *kdb) {
             }
 
         }
-        Py_XDECREF(args);
         KAdminPrincipal_destroy(principal);
     }
 
