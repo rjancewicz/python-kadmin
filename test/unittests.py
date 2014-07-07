@@ -197,6 +197,22 @@ class KAdminUnitTests(unittest.TestCase):
         self.assertEqual(count, size)
 
     '''
+    def test_each_iteration(self):
+
+        kadm = self.kadm
+        count = [0]
+
+        size = database_size()
+
+        def fxn(princ):
+            count[0] += 1
+
+        kadm.each_principal(lambda princ: fxn(princ))
+
+        self.assertEqual(count[0], size)
+
+    '''
+    '''
     unpack iteration is SLOW over GSSAPI connections, while still enabled it is advised that this is only used via kadmin.local
     def test_unpack_iteration(self):
 
@@ -209,7 +225,6 @@ class KAdminUnitTests(unittest.TestCase):
             count += 1
         
         self.assertEqual(count, size)
-    '''
 
     def test_filter_iteration(self):
 
@@ -220,12 +235,13 @@ class KAdminUnitTests(unittest.TestCase):
 
         create_test_accounts()
 
-        for princ in kadm.principals('test[0-9][0-9]', unpack=True):
+        for princ in kadm.principals('test*', unpack=True):
             count += 1
         
         self.assertEqual(count, size)
         
         delete_test_accounts()
+    '''
         
     def test_not_exists(self):
         
@@ -378,7 +394,23 @@ class KAdminLocalUnitTests(unittest.TestCase):
             count += 1
       
         self.assertEqual(count, size)
-    
+
+    def test_each_iteration(self):
+
+        kadm = self.kadm
+        count = [0]
+
+        size = database_size()
+
+        def fxn(princ):
+            count[0] += 1
+
+        kadm.each_principal(lambda princ: fxn(princ))
+
+        self.assertEqual(count[0], size)
+
+   
+    ''''
     def test_unpack_iteration(self):
 
         kadm = self.kadm
@@ -398,7 +430,7 @@ class KAdminLocalUnitTests(unittest.TestCase):
         logging.info("unpacked iteration: {0} principals unpacked in {1} seconds [{2} per second].".format(count, time_d, (count/time_d)))
         
         self.assertEqual(count, size)
-    
+
     def test_filter_iteration(self):
 
         kadm = self.kadm
@@ -414,7 +446,8 @@ class KAdminLocalUnitTests(unittest.TestCase):
         self.assertEqual(count, size)
         
         delete_test_accounts()
-        
+    '''
+
     def test_not_exists(self):
         
         kadm = self.kadm

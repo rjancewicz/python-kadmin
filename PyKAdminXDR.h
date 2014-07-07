@@ -27,10 +27,10 @@ typedef struct _osa_princ_ent_t {
     osa_pw_hist_ent             *old_keys;
 } osa_princ_ent_rec, *osa_princ_ent_t;
 
-void pykadmin_xdr_osa_free_princ_ent(osa_princ_ent_rec *entry); 
 int pykadmin_xdr_nullstring(XDR *xdrs, char **string);
 int pykadmin_xdr_osa_pw_hist_ent(XDR *xdrs, osa_pw_hist_ent *objp);
 int pykadmin_xdr_osa_princ_ent_rec(XDR *xdrs, osa_princ_ent_rec *entry);
 
+void pykadmin_xdr_osa_free_princ_ent(osa_princ_ent_rec *entry); 
 
 #endif

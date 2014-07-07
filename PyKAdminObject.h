@@ -10,13 +10,19 @@
 #include <structmember.h>
 
 typedef struct {
+	PyObject *callback;
+	PyObject *arg;
+} each_iteration_t; 
+
+typedef struct {
     PyObject_HEAD
     
     krb5_context context; 
     void *server_handle;
     char *realm;
     
-    PyObject *each_callback;
+    each_iteration_t each_principal;
+    each_iteration_t each_policy;
     
 } PyKAdminObject;
 

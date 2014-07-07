@@ -2,7 +2,7 @@
 target=$1
 
 if [ "$target" == "test" ]; then 
-    python ./setup.py build --build-platlib ./test/
+    CFLAGS="-O0" python ./setup.py build --build-platlib ./test/
 fi
 
 if [ "$target" == "release" ]; then

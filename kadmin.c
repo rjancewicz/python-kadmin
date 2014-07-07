@@ -3,6 +3,7 @@
 #include <Python.h>
 #include <kadm5/admin.h>
 #include <krb5/krb5.h>
+#include <kdb.h>
 #include <stdio.h>
 #include <string.h>
 #include <structmember.h>
@@ -191,6 +192,7 @@ static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) 
         return NULL; 
 
     if (keytab_name == NULL) {
+        
         keytab_name = "/etc/krb5.keytab";
     }
   
@@ -205,6 +207,8 @@ static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) 
         krb5_free_principal(kadmin->context, princ);
     }
 
+
+
     retval = kadm5_init_with_skey(
                 kadmin->context, 
                 client_name, 
@@ -217,6 +221,18 @@ static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) 
                 &kadmin->server_handle);
 
     if (retval) { PyKAdmin_RaiseKAdminError(retval, "kadm5_init_with_skey"); return NULL; }
+
+
+   // kadmin->context = kadmin->server_handle->context;
+
+    //retval = krb5_db_setup_lib_handle(kadmin->context);
+
+ //   if (retval) {
+   //     printf("retval [%d] %s\n", retval, krb5_get_error_message(kadmin->context, retval));
+   // 
+    //}
+    //if (retval) { PyKAdmin_RaiseKAdminError(retval, "kadm5_init_with_skey"); return NULL; }
+
 
     Py_XINCREF(kadmin);
     return kadmin;
