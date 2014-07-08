@@ -195,7 +195,7 @@ static int kdb_iter_princs(void *data, krb5_db_entry *kdb) {
 
         if (self->each_principal.callback) {
             
-            result = PyObject_CallFunctionObjArgs(self->each_principal.callback, principal, self->each_principal.arg, NULL);
+            result = PyObject_CallFunctionObjArgs(self->each_principal.callback, principal, self->each_principal.data, NULL);
             
             if (!result) {
                 // use self to hold exception 
@@ -218,16 +218,16 @@ static PyObject *PyKAdminObject_each_principal(PyKAdminObject *self, PyObject *a
     kadm5_ret_t lock = 0; 
 
 
-    static char *kwlist[] = {"", "arg", "match", NULL};
+    static char *kwlist[] = {"", "data", "match", NULL};
     
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|Oz", kwlist, &PyFunction_Type, &self->each_principal.callback, &self->each_principal.arg, &match))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|Oz", kwlist, &PyFunction_Type, &self->each_principal.callback, &self->each_principal.data, &match))
         return NULL;
 
-    if (!self->each_principal.arg)
-        self->each_principal.arg = Py_None;
+    if (!self->each_principal.data)
+        self->each_principal.data = Py_None;
 
     Py_XINCREF(self->each_principal.callback);
-    Py_XINCREF(self->each_principal.arg);
+    Py_XINCREF(self->each_principal.data);
     
     lock = kadm5_lock(self->server_handle);
 
@@ -243,7 +243,7 @@ static PyObject *PyKAdminObject_each_principal(PyKAdminObject *self, PyObject *a
     }
 
     Py_XDECREF(self->each_principal.callback);
-    Py_XDECREF(self->each_principal.arg);
+    Py_XDECREF(self->each_principal.data);
 
     if (retval) {
         // TODO raise proper exception
