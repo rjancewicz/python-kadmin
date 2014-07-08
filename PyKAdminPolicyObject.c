@@ -16,7 +16,8 @@ static PyObject *PyKAdminPolicyObject_new(PyTypeObject *type, PyObject *args, Py
 
     self = (PyKAdminPolicyObject *)type->tp_alloc(type, 0);
 
-    if (self != NULL) {
+    if (self) {
+        
     }
 
     return (PyObject *)self;    

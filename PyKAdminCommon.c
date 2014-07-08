@@ -354,6 +354,24 @@ int pykadmin_principal_ent_rec_compare(krb5_context ctx, kadm5_principal_ent_rec
     return result; 
 }
 
+int pykadmin_policy_ent_rec_compare(krb5_context ctx, kadm5_policy_ent_rec *a, kadm5_policy_ent_rec *b) {
+
+    int result = 1; 
+
+    result &= (strcmp(a->policy, b->policy) == 0);
+
+    result &= (a->pw_min_life == b->pw_min_life);
+    result &= (a->pw_max_life == b->pw_max_life);
+    result &= (a->pw_min_length == b->pw_min_length);
+    result &= (a->pw_min_classes == b->pw_min_classes);
+    result &= (a->pw_history_num == b->pw_history_num);
+    result &= (a->policy_refcnt == b->policy_refcnt);
+    result &= (a->pw_max_fail == b->pw_max_fail);
+    result &= (a->pw_failcnt_interval == b->pw_failcnt_interval);
+    result &= (a->pw_lockout_duration == b->pw_lockout_duration);
+
+    return result;
+}
 
 /*
 krb5_error_code pykadmin_copy_kadm_ent_rec(PyKAdminObject *kadmin, kadm5_principal_ent_rec *src, kadm5_principal_ent_rec *dst) {
