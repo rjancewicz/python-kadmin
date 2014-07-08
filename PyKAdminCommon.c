@@ -265,6 +265,68 @@ done:
 }
 
 
+
+/*
+typedef struct _kadm5_policy_ent_t {
+    char            *policy;
+    long            pw_min_life;
+    long            pw_max_life;
+    long            ;
+    long            ;
+    long            ;
+    long            ;
+
+    // version 3 fields 
+    int32 krb5_kvno       pw_max_fail;
+    int32 krb5_deltat     pw_failcnt_interval;
+    int32 krb5_deltat     pw_lockout_duration;
+} kadm5_policy_ent_rec, *kadm5_policy_ent_t;
+
+typedef struct _osa_policy_ent_t {
+    int               version;
+    char      *name;
+    krb5_ui_4       pw_min_life;
+    krb5_ui_4       pw_max_life;
+    krb5_ui_4       pw_min_length;
+    krb5_ui_4       pw_min_classes;
+    krb5_ui_4       pw_history_num;
+    krb5_ui_4       policy_refcnt;
+
+    // Only valid if version > 1 
+    krb5_ui_4       pw_max_fail;                // pwdMaxFailure 
+    krb5_ui_4       pw_failcnt_interval;        // pwdFailureCountInterval 
+    krb5_ui_4       pw_lockout_duration;        // pwdLockoutDuration 
+} osa_policy_ent_rec, *osa_policy_ent_t;
+
+
+*/
+
+
+krb5_error_code pykadmin_policy_kadm_from_osa(krb5_context ctx, osa_policy_ent_rec *osa, kadm5_policy_ent_rec *entry, long mask) {
+
+    krb5_error_code retval = 0; 
+
+    memset(entry, 0, sizeof(kadm5_policy_ent_rec));
+
+    entry->policy = strdup(osa->name);
+    entry->pw_min_life = osa->pw_min_life;
+    entry->pw_max_life = osa->pw_max_life;
+    entry->pw_min_length = osa->pw_min_length;
+    entry->pw_min_classes = osa->pw_min_classes;
+    entry->pw_history_num = osa->pw_history_num;
+    entry->policy_refcnt = osa->policy_refcnt;
+
+    if (osa->version > 1) {
+        entry->pw_max_fail = osa->pw_max_fail;
+        entry->pw_failcnt_interval = osa->pw_failcnt_interval;
+        entry->pw_lockout_duration = osa->pw_lockout_duration;
+    }
+
+    return retval;
+}
+
+
+
 int pykadmin_compare_tl_data(krb5_context ctx, krb5_tl_data *a, krb5_tl_data *b) {
 
     int result = 1; 

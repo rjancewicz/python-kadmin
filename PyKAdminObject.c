@@ -260,15 +260,72 @@ static void kdb_iter_pols(void *data, osa_policy_ent_rec *entry) {
 
     PyKAdminObject *self = (PyKAdminObject *)data;
 
+    PyObject *result = NULL;
+
+    PyKAdminPolicyObject *policy = PyKAdminPolicyObject_policy_with_osa_entry(self, entry);
+
+    if (policy) {
+
+        if (self->each_policy.callback) {
+            
+            result = PyObject_CallFunctionObjArgs(self->each_policy.callback, policy, self->each_policy.data, NULL);
+            
+            if (!result) {
+                // use self to hold exception 
+            }
+
+        }
+        PyKAdminPolicyObject_destroy(policy);
+    }
 }
 
 
 static PyObject *PyKAdminObject_each_policy(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
-    return NULL;
+    
+    char *match = NULL;
+    krb5_error_code retval = 0; 
+    kadm5_ret_t lock = 0; 
+
+    static char *kwlist[] = {"", "data", "match", NULL};
+    
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|Oz", kwlist, &PyFunction_Type, &self->each_policy.callback, &self->each_policy.data, &match))
+        return NULL;
+
+    if (!self->each_policy.data)
+        self->each_policy.data = Py_None;
+
+    Py_XINCREF(self->each_policy.callback);
+    Py_XINCREF(self->each_policy.data);
+    
+    lock = kadm5_lock(self->server_handle);
+
+    if (!lock || (lock == KRB5_PLUGIN_OP_NOTSUPP)) {
+
+        krb5_clear_error_message(self->context);
+
+        retval = krb5_db_iter_policy(self->context, match, kdb_iter_pols, (void *)self);
+    
+        if (lock != KRB5_PLUGIN_OP_NOTSUPP) {     
+            lock = kadm5_unlock(self->server_handle);
+        }
+    }
+
+    Py_XDECREF(self->each_policy.callback);
+    Py_XDECREF(self->each_policy.data);
+
+    if (retval) {
+        // TODO raise proper exception
+        return NULL;
+    }
+
+    Py_RETURN_TRUE;
+
 }
 
 
 static PyKAdminPrincipalObject *PyKAdminObject_list_principals(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
+
+
     return NULL;
 }
 
@@ -284,6 +341,7 @@ static PyMethodDef PyKAdminObject_methods[] = {
     {"create_princ",        (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
     {"create_principal",    (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
     {"list_principals",     (PyCFunction)PyKAdminObject_list_principals,  METH_VARARGS, ""},
+
     {"principals",          (PyCFunction)PyKAdminObject_principal_iter,   (METH_VARARGS | METH_KEYWORDS), ""},
     {"policies",            (PyCFunction)PyKAdminObject_policy_iter,      (METH_VARARGS | METH_KEYWORDS), ""},
     

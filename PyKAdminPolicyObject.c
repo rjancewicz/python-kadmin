@@ -17,7 +17,7 @@ static PyObject *PyKAdminPolicyObject_new(PyTypeObject *type, PyObject *args, Py
     self = (PyKAdminPolicyObject *)type->tp_alloc(type, 0);
 
     if (self) {
-        
+
     }
 
     return (PyObject *)self;    
@@ -32,6 +32,55 @@ static int PyKAdminPolicyObject_init(PyKAdminPolicyObject *self, PyObject *args,
 static PyMethodDef PyKAdminPolicyObject_methods[] = {
     {NULL, NULL, 0, NULL}
 };
+
+/*
+Policy: test_policy
+Maximum password life: 0
+Minimum password life: 864000
+Minimum password length: 1
+Minimum number of password character classes: 1
+Number of old keys kept: 1
+Reference count: 0
+Maximum password failures before lockout: 10
+Password failure count reset interval: 0 days 00:00:00
+Password lockout duration: 0 days 00:00:00
+*/
+
+static int KAdminPolicyObject_print(PyKAdminPolicyObject *self, FILE *file, int flags){
+    // TODO
+    
+    return 0;
+}
+
+
+PyObject *PyKAdminPolicy_RichCompare(PyObject *o1, PyObject *o2, int opid) {
+
+    PyKAdminPolicyObject *a = (PyKAdminPolicyObject *)o1;
+    PyKAdminPolicyObject *b = (PyKAdminPolicyObject *)o2;
+
+    PyObject *result = NULL; 
+        
+    int equal = pykadmin_policy_ent_rec_compare(a->kadmin->context, &a->entry, &b->entry);
+
+    switch (opid) {
+
+        case Py_EQ:
+            result = ((a == b) || equal) ? Py_True : Py_False;
+            break;
+        case Py_NE:
+            result = ((a != b) && !equal) ? Py_True : Py_False;
+            break;
+        case Py_LT:
+        case Py_LE:
+        case Py_GT:
+        case Py_GE:
+        default: 
+            result = Py_NotImplemented;
+    }
+
+    Py_XINCREF(result);
+    return result;
+}
 
 PyTypeObject PyKAdminPolicyObject_Type = {
     PyObject_HEAD_INIT(NULL)
@@ -55,10 +104,10 @@ PyTypeObject PyKAdminPolicyObject_Type = {
     0,                         /*tp_setattro*/
     0,                         /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
-    "KAdmin objects",           /* tp_doc */
+    "Python KAdmin Policy Object",           /* tp_doc */
     0,                     /* tp_traverse */
     0,                     /* tp_clear */
-    0,                     /* tp_richcompare */
+    PyKAdminPolicy_RichCompare,                     /* tp_richcompare */
     0,                     /* tp_weaklistoffset */
     0,                     /* tp_iter */
     0,                     /* tp_iternext */
@@ -75,10 +124,7 @@ PyTypeObject PyKAdminPolicyObject_Type = {
     PyKAdminPolicyObject_new,                 /* tp_new */
 };
 
-
-
-PyKAdminPolicyObject *PyKAdminPolicyObject_create(PyKAdminObject *kadmin, char *name) {
-
+PyKAdminPolicyObject *PyKAdminPolicyObject_policy_with_name(PyKAdminObject *kadmin, char *name) {
 
     PyKAdminPolicyObject *policy = NULL; 
 
@@ -89,10 +135,33 @@ PyKAdminPolicyObject *PyKAdminPolicyObject_create(PyKAdminObject *kadmin, char *
         policy->kadmin = kadmin;
     }
 
-    //_KAdminPolicy_load_principal(policy, client_name);
+    return policy;
+}
+
+
+PyKAdminPolicyObject *PyKAdminPolicyObject_policy_with_osa_entry(PyKAdminObject *kadmin, osa_policy_ent_rec *entry) {
+    
+    PyKAdminPolicyObject *policy = NULL; 
+
+    krb5_error_code retval = 0;
+
+    policy = (PyKAdminPolicyObject *)PyKAdminPolicyObject_new(&PyKAdminPolicyObject_Type, NULL, NULL);
+    
+    if (policy) {
+        Py_XINCREF(kadmin);
+        policy->kadmin = kadmin;
+
+        retval = pykadmin_policy_kadm_from_osa(kadmin->context, entry, &policy->entry, 0);
+
+        if (retval) {
+            // this will never happen for while the above is called.
+        }
+    }
 
     return policy;
 }
+
+
 
 void PyKAdminPolicyObject_destroy(PyKAdminPolicyObject *self) {
     PyKAdminPolicyObject_dealloc(self); 
