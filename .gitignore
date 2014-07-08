@@ -30,4 +30,9 @@ build/
 
 kadmin.so
 *.keytab
+krb5cc*
+
+# Vagrant Configs
+.vagrant
+Vagrantfile
 
