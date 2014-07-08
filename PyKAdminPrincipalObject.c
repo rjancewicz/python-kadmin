@@ -7,6 +7,7 @@
 
 #include "PyKAdminCommon.h"
 
+#define Principal_Check(princ) PyObject_TypeCheck(princ, &PyKAdminPrincipalObject_Type)
 
 static void KAdminPrincipal_dealloc(PyKAdminPrincipalObject *self) {
     
@@ -164,10 +165,11 @@ static PyObject *_KAdminPrincipal_load_principal(PyKAdminPrincipalObject *self, 
         }
     
         retval = kadm5_get_principal(self->kadmin->server_handle, parsed_name, &self->entry, KADM5_PRINCIPAL_NORMAL_MASK);
-        if (retval != 0x0) { PyKAdmin_RaiseKAdminError(retval, "kadm5_get_principal"); return NULL; }
 
         krb5_free_principal(self->kadmin->context, parsed_name);
-    
+        
+        if (retval != 0x0) { PyKAdmin_RaiseKAdminError(retval, "kadm5_get_principal"); return NULL; }
+
         Py_RETURN_TRUE;
     }
 
@@ -251,6 +253,40 @@ static PyObject *KAdminPrincipal_get_name(PyKAdminPrincipalObject *self, PyObjec
     return name;
 }
 
+
+PyObject *PyKAdminPrincipal_RichCompare(PyObject *o1, PyObject *o2, int opid) {
+//int PyKAdminPrincipal_compare(PyObject *o1, PyObject *o2) {
+
+    PyKAdminPrincipalObject *a = (PyKAdminPrincipalObject *)o1;
+    PyKAdminPrincipalObject *b = (PyKAdminPrincipalObject *)o2;
+
+    PyObject *result = NULL; 
+        
+    int equal = pykadmin_principal_ent_rec_compare(a->kadmin->context, &a->entry, &b->entry);
+
+    switch (opid) {
+
+        case Py_EQ:
+            result = ((a == b) || equal) ? Py_True : Py_False;
+            break;
+        case Py_NE:
+            result = ((a != b) && !equal) ? Py_True : Py_False;
+            break;
+        case Py_LT:
+        case Py_LE:
+        case Py_GT:
+        case Py_GE:
+        default: 
+            result = Py_NotImplemented;
+            goto done;
+    }
+
+
+done:
+    Py_XINCREF(result);
+    return result;
+}
+
 static PyMethodDef KAdminPrincipal_methods[] = {
     {"cpw",             (PyCFunction)KAdminPrincipal_change_password,   METH_VARARGS, ""},
     {"change_password", (PyCFunction)KAdminPrincipal_change_password,   METH_VARARGS, ""},
@@ -292,7 +328,7 @@ PyTypeObject PyKAdminPrincipalObject_Type = {
     "KAdminPrincipal objects",           /* tp_doc */
     0,                     /* tp_traverse */
     0,                     /* tp_clear */
-    0,                     /* tp_richcompare */
+    PyKAdminPrincipal_RichCompare,                     /* tp_richcompare */
     0,                     /* tp_weaklistoffset */
     0,                     /* tp_iter */
     0,                     /* tp_iternext */

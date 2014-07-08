@@ -12,25 +12,29 @@ static void PyKAdminObject_dealloc(PyKAdminObject *self) {
     
     kadm5_ret_t retval;
 
-    krb5_db_unlock(self->context);
+    if (self) {
+        krb5_db_unlock(self->context);
 
-    if (self->server_handle) {
-        retval = kadm5_destroy(self->server_handle);
-        if (retval) {}
+        if (self->server_handle) {
+            retval = kadm5_destroy(self->server_handle);
+            if (retval) {}
+            self->server_handle = NULL;
+        }
+        
+        if (self->context) {
+            krb5_free_context(self->context);
+            self->context = NULL;
+        }
+
+        if (self->realm) {
+            free(self->realm);
+        }
+
+        self->ob_type->tp_free((PyObject*)self);
+        self = NULL;
     }
-    
-    if (self->context) {
-        krb5_free_context(self->context);
-    }
-
-    if (self->realm) {
-        free(self->realm);
-    }
-
-
-    self->ob_type->tp_free((PyObject*)self);
 }
-
+    
 static PyObject *PyKAdminObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
 
     PyKAdminObject *self; 
@@ -136,7 +140,7 @@ static PyObject *PyKAdminObject_create_principal(PyKAdminObject *self, PyObject 
 static PyKAdminPrincipalObject *PyKAdminObject_get_principal(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
 
     PyKAdminPrincipalObject *principal = NULL;
-    char *client_name; 
+    char *client_name = NULL;
 
     if (!PyArg_ParseTuple(args, "s", &client_name)) {
         return NULL;

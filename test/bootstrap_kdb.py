@@ -3,7 +3,7 @@ import kadmin
 
 admin = kadmin.init_with_keytab("test/admin", "./test.keytab")
 
-for a in xrange(97, 117):
+for a in xrange(97, 98):
     print(chr(a))
     for b in xrange(97, 123):
         for c in xrange(97, 123):

@@ -8,6 +8,7 @@ int pykadmin_xdr_osa_princ_ent_rec(XDR *xdrs, osa_princ_ent_rec *entry) {
 
 	memset(entry, 0, sizeof(osa_princ_ent_rec));
 
+
 	switch (xdrs->x_op) {
 
 		case XDR_ENCODE:
@@ -20,20 +21,20 @@ int pykadmin_xdr_osa_princ_ent_rec(XDR *xdrs, osa_princ_ent_rec *entry) {
 				goto done;
 	}
 
-    if (!pykadmin_xdr_nullstring(xdrs, &entry->policy))
+  if (!pykadmin_xdr_nullstring(xdrs, &entry->policy))
 		goto done;
 
-    if (!xdr_long(xdrs, &entry->aux_attributes))
+  if (!xdr_long(xdrs, &entry->aux_attributes))
 		goto done;
 
-    if (!xdr_u_int(xdrs, &entry->old_key_next))
+  if (!xdr_u_int(xdrs, &entry->old_key_next))
 		goto done;
 
 	if (!xdr_u_char(xdrs, (unsigned char *)&entry->admin_history_kvno))
 		goto done;
 
-    if (!xdr_array(xdrs, (caddr_t *) &entry->old_keys, (unsigned int *) &entry->old_key_len, ~0, sizeof(osa_pw_hist_ent), pykadmin_xdr_osa_pw_hist_ent))
-   		goto done;
+  if (!xdr_array(xdrs, (caddr_t *) &entry->old_keys, (unsigned int *) &entry->old_key_len, ~0, sizeof(osa_pw_hist_ent), pykadmin_xdr_osa_pw_hist_ent))
+   	goto done;
 
 	result = 1;
 
