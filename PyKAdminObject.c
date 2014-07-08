@@ -31,7 +31,6 @@ static void PyKAdminObject_dealloc(PyKAdminObject *self) {
         }
 
         self->ob_type->tp_free((PyObject*)self);
-        self = NULL;
     }
 }
     

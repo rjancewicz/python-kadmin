@@ -86,7 +86,6 @@ class KAdminUnitTests(unittest.TestCase):
       
         self.kadm = kadm
 
-'''
     def test_init_with_keytab(self):
         
         try:    
@@ -215,7 +214,7 @@ class KAdminUnitTests(unittest.TestCase):
 
         kadm = self.kadm
 
-        #create_test_accounts()
+        create_test_accounts()
 
         account = TEST_ACCOUNTS[0]
 
@@ -223,12 +222,13 @@ class KAdminUnitTests(unittest.TestCase):
         b = kadm.getprinc(account)
 
         self.assertEqual(a, b)
+    
 
     def test_princ_compare_ne(self):
 
         kadm = self.kadm
 
-        #create_test_accounts()
+        create_test_accounts()
 
         account = TEST_ACCOUNTS[0]
 
@@ -239,8 +239,6 @@ class KAdminUnitTests(unittest.TestCase):
         b = kadm.getprinc(account)
 
         self.assertNotEqual(a, b)
-'''
-
 
 
 
@@ -264,7 +262,7 @@ class KAdminLocalUnitTests(unittest.TestCase):
       
         self.kadm = kadm
     
-    '''
+    
     def test_local(self):
         
         try:    
@@ -398,7 +396,6 @@ class KAdminLocalUnitTests(unittest.TestCase):
         kadm.each_principal(fxn, count)
 
         self.assertEqual(count[0], size)
-    '''
 
     def test_not_exists(self):
         
@@ -411,20 +408,18 @@ class KAdminLocalUnitTests(unittest.TestCase):
         princ = kadm.getprinc(account)
 
         self.assertIsNone(princ)
+
     
     def test_princ_compare_eq(self):
 
         kadm = self.kadm
 
-        #create_test_accounts()
+        create_test_accounts()
 
         account = TEST_ACCOUNTS[0]
 
-        try:
-            a = kadm.getprinc(account)
-            b = kadm.getprinc(account)
-        except:
-            pass
+        a = kadm.getprinc(account)
+        b = kadm.getprinc(account)
 
         self.assertEqual(a, b)
     
@@ -433,18 +428,15 @@ class KAdminLocalUnitTests(unittest.TestCase):
 
         kadm = self.kadm
 
-        #create_test_accounts()
+        create_test_accounts()
 
-        try:
-            account = TEST_ACCOUNTS[0]
+        account = TEST_ACCOUNTS[0]
 
-            a = kadm.getprinc(account)
+        a = kadm.getprinc(account)
 
-            account = TEST_ACCOUNTS[1]
+        account = TEST_ACCOUNTS[1]
 
-            b = kadm.getprinc(account)
-        except:
-            pass
+        b = kadm.getprinc(account)
 
         self.assertNotEqual(a, b)
 
