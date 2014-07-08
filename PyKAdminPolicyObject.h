@@ -6,6 +6,7 @@
 #include <kadm5/admin.h>
 #include <krb5/krb5.h>
 #include <stdio.h>
+#include <kdb.h>
 #include <string.h>
 #include <structmember.h>
 

@@ -3,11 +3,19 @@
 #include "PyKAdminErrors.h"
 #include "PyKAdminIterator.h"
 #include "PyKAdminPrincipalObject.h"
+
 #include "PyKAdminPolicyObject.h"
 
 static void PyKAdminPolicyObject_dealloc(PyKAdminPolicyObject *self) {
     
-    self->ob_type->tp_free((PyObject*)self);
+    if (self) {
+        kadm5_free_policy_ent(self->kadmin->server_handle, &self->entry);  
+
+        Py_XDECREF(self->kadmin);
+
+
+        self->ob_type->tp_free((PyObject*)self);
+    }
 }
 
 static PyObject *PyKAdminPolicyObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
@@ -16,13 +24,25 @@ static PyObject *PyKAdminPolicyObject_new(PyTypeObject *type, PyObject *args, Py
 
     self = (PyKAdminPolicyObject *)type->tp_alloc(type, 0);
 
-    if (self) {
+    if (!self)
+        return NULL;
 
-    }
+    memset(&self->entry, 0, sizeof(kadm5_policy_ent_rec));
 
     return (PyObject *)self;    
 
 }
+
+static kadm5_ret_t _PyKAdminPolicyObject_load(PyKAdminPolicyObject *self, char *policy_name) {
+
+    kadm5_ret_t retval = 0;
+
+    retval = kadm5_get_policy(self->kadmin->server_handle, policy_name, &self->entry);
+
+    return retval;
+}
+
+
 
 static int PyKAdminPolicyObject_init(PyKAdminPolicyObject *self, PyObject *args, PyObject *kwds) {
     return 0;
@@ -83,8 +103,8 @@ PyObject *PyKAdminPolicy_RichCompare(PyObject *o1, PyObject *o2, int opid) {
 }
 
 PyTypeObject PyKAdminPolicyObject_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
+//    0,                         /*ob_size*/
     "kadmin.KAdminPolicy",             /*tp_name*/
     sizeof(PyKAdminPolicyObject),             /*tp_basicsize*/
     0,                         /*tp_itemsize*/
@@ -126,6 +146,7 @@ PyTypeObject PyKAdminPolicyObject_Type = {
 
 PyKAdminPolicyObject *PyKAdminPolicyObject_policy_with_name(PyKAdminObject *kadmin, char *name) {
 
+    kadm5_ret_t retval = 0;
     PyKAdminPolicyObject *policy = NULL; 
 
     policy = (PyKAdminPolicyObject *)PyKAdminPolicyObject_new(&PyKAdminPolicyObject_Type, NULL, NULL);
@@ -133,6 +154,13 @@ PyKAdminPolicyObject *PyKAdminPolicyObject_policy_with_name(PyKAdminObject *kadm
     if (policy) {
         Py_XINCREF(kadmin);
         policy->kadmin = kadmin;
+
+        retval = _PyKAdminPolicyObject_load(policy, name);
+
+        if (retval) {
+            PyKAdminPolicyObject_dealloc(policy);
+        }
+
     }
 
     return policy;

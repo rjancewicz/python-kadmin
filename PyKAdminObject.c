@@ -153,6 +153,21 @@ static PyKAdminPrincipalObject *PyKAdminObject_get_principal(PyKAdminObject *sel
     return principal;
 }
 
+static PyKAdminPolicyObject *PyKAdminObject_get_policy(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
+
+    PyKAdminPolicyObject *policy = NULL;
+    char *policy_name = NULL;
+
+    if (!PyArg_ParseTuple(args, "s", &policy_name))
+        return NULL;
+
+    if (self->server_handle) {
+        policy = PyKAdminPolicyObject_policy_with_name(self, policy_name);
+    } 
+
+    return policy;
+}
+
 
 static PyKAdminIterator *PyKAdminObject_principal_iter(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
 
@@ -333,6 +348,9 @@ static PyKAdminPrincipalObject *PyKAdminObject_list_principals(PyKAdminObject *s
 static PyMethodDef PyKAdminObject_methods[] = {
     {"getprinc",            (PyCFunction)PyKAdminObject_get_principal,    METH_VARARGS, ""},
     {"get_principal",       (PyCFunction)PyKAdminObject_get_principal,    METH_VARARGS, ""},
+    
+    {"getpol",              (PyCFunction)PyKAdminObject_get_policy,       METH_VARARGS, ""},
+    {"get_policy",          (PyCFunction)PyKAdminObject_get_policy,       METH_VARARGS, ""},
 
     {"delprinc",            (PyCFunction)PyKAdminObject_delete_principal, METH_VARARGS, ""},
     {"delete_principal",    (PyCFunction)PyKAdminObject_delete_principal, METH_VARARGS, ""},

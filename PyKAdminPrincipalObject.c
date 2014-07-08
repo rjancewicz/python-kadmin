@@ -302,6 +302,19 @@ static PyMethodDef KAdminPrincipal_methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
+/*
+typedef PyObject *(*getter)(PyObject *, void *);
+typedef int (*setter)(PyObject *, PyObject *, void *);
+
+typedef struct PyGetSetDef {
+    char *name;    /* attribute name * /
+    getter get;    /* C function to get the attribute * /
+    setter set;    /* C function to set the attribute * /
+    char *doc;     /* optional doc string * /
+    void *closure; /* optional additional data for getter and setter * /
+} PyGetSetDef;
+*/
+
 
 PyTypeObject PyKAdminPrincipalObject_Type = {
     PyObject_HEAD_INIT(NULL)
