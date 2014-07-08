@@ -7,7 +7,7 @@
 
 #include "PyKAdminCommon.h"
 
-#define IS_NULL(ptr) (ptr == NULL)
+#define Principal_Check(princ) PyObject_TypeCheck(princ, &PyKAdminPrincipalObject_Type)
 
 static void KAdminPrincipal_dealloc(PyKAdminPrincipalObject *self) {
     
@@ -165,10 +165,11 @@ static PyObject *_KAdminPrincipal_load_principal(PyKAdminPrincipalObject *self, 
         }
     
         retval = kadm5_get_principal(self->kadmin->server_handle, parsed_name, &self->entry, KADM5_PRINCIPAL_NORMAL_MASK);
-        if (retval != 0x0) { PyKAdmin_RaiseKAdminError(retval, "kadm5_get_principal"); return NULL; }
 
         krb5_free_principal(self->kadmin->context, parsed_name);
-    
+        
+        if (retval != 0x0) { PyKAdmin_RaiseKAdminError(retval, "kadm5_get_principal"); return NULL; }
+
         Py_RETURN_TRUE;
     }
 
@@ -252,6 +253,40 @@ static PyObject *KAdminPrincipal_get_name(PyKAdminPrincipalObject *self, PyObjec
     return name;
 }
 
+
+PyObject *PyKAdminPrincipal_RichCompare(PyObject *o1, PyObject *o2, int opid) {
+//int PyKAdminPrincipal_compare(PyObject *o1, PyObject *o2) {
+
+    PyKAdminPrincipalObject *a = (PyKAdminPrincipalObject *)o1;
+    PyKAdminPrincipalObject *b = (PyKAdminPrincipalObject *)o2;
+
+    PyObject *result = NULL; 
+        
+    int equal = pykadmin_principal_ent_rec_compare(a->kadmin->context, &a->entry, &b->entry);
+
+    switch (opid) {
+
+        case Py_EQ:
+            result = ((a == b) || equal) ? Py_True : Py_False;
+            break;
+        case Py_NE:
+            result = ((a != b) && !equal) ? Py_True : Py_False;
+            break;
+        case Py_LT:
+        case Py_LE:
+        case Py_GT:
+        case Py_GE:
+        default: 
+            result = Py_NotImplemented;
+            goto done;
+    }
+
+
+done:
+    Py_XINCREF(result);
+    return result;
+}
+
 static PyMethodDef KAdminPrincipal_methods[] = {
     {"cpw",             (PyCFunction)KAdminPrincipal_change_password,   METH_VARARGS, ""},
     {"change_password", (PyCFunction)KAdminPrincipal_change_password,   METH_VARARGS, ""},
@@ -293,7 +328,7 @@ PyTypeObject PyKAdminPrincipalObject_Type = {
     "KAdminPrincipal objects",           /* tp_doc */
     0,                     /* tp_traverse */
     0,                     /* tp_clear */
-    0,                     /* tp_richcompare */
+    PyKAdminPrincipal_RichCompare,                     /* tp_richcompare */
     0,                     /* tp_weaklistoffset */
     0,                     /* tp_iter */
     0,                     /* tp_iternext */
@@ -324,7 +359,7 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_name(PyKAdminObj
         PyObject *result = _KAdminPrincipal_load_principal(principal, client_name);
 
         if (!result) {
-            Py_XDECREF(kadmin);
+            //Py_XDECREF(kadmin); // this is redundant as dealloc decrementes the reference for us
             Py_XINCREF(Py_None);
             KAdminPrincipal_dealloc(principal);
             principal = (PyKAdminPrincipalObject *)Py_None;
@@ -350,55 +385,12 @@ PyKAdminPrincipalObject *PyKadminPrincipalObject_principal_with_db_entry(PyKAdmi
 
         if (retval) {
 
-        } 
-    }
-
-    return principal;
-}
-
-/*
-PyKAdminPrincipalObject *PyKadminPrincipalObject_principal_with_kadm_entry(PyKAdminObject *kadmin, kadm5_principal_ent_rec *entry) {
-
-    krb5_error_code retval;
-
-    PyKAdminPrincipalObject *principal = (PyKAdminPrincipalObject *)KAdminPrincipal_new(&PyKAdminPrincipalObject_Type, NULL, NULL);
-
-    if (entry) {
-
-        Py_XINCREF(kadmin);
-        principal->kadmin = kadmin;
-
-        //retval = pykadmin_copy_kadm_ent_rec(kadmin, entry, &principal->entry);
-
-        if (retval) {
-
-        }
-
-
-    }
-
-    return principal;
-}
-*/
-
-PyKAdminPrincipalObject *PyKAdminPrincipalObject_create(PyKAdminObject *kadmin, char *client_name) {
-
-    PyKAdminPrincipalObject *principal = NULL; 
-
-    principal = (PyKAdminPrincipalObject *)KAdminPrincipal_new(&PyKAdminPrincipalObject_Type, NULL, NULL);
-
-    if (principal) {
-        principal->kadmin = kadmin;
-        Py_XINCREF(kadmin);
-
-        PyObject *result = _KAdminPrincipal_load_principal(principal, client_name);
-
-        if (!result) {
             KAdminPrincipal_dealloc(principal);
-            principal = (PyKAdminPrincipalObject *)Py_None;
-            Py_XDECREF(kadmin);
-            Py_XINCREF(Py_None);
-        }
+            
+            // todo: set exception
+            principal = NULL;
+
+        } 
     }
 
     return principal;

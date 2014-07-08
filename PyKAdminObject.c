@@ -8,31 +8,32 @@
 #include "PyKAdminCommon.h"
 
 
-#define IS_NULL(ptr) (ptr == NULL)
-
 static void PyKAdminObject_dealloc(PyKAdminObject *self) {
     
     kadm5_ret_t retval;
 
-    krb5_db_unlock(self->context);
+    if (self) {
+        krb5_db_unlock(self->context);
 
-    if (!IS_NULL(self->server_handle)) {
-        retval = kadm5_destroy(self->server_handle);
-        if (retval) {}
+        if (self->server_handle) {
+            retval = kadm5_destroy(self->server_handle);
+            if (retval) {}
+            self->server_handle = NULL;
+        }
+        
+        if (self->context) {
+            krb5_free_context(self->context);
+            self->context = NULL;
+        }
+
+        if (self->realm) {
+            free(self->realm);
+        }
+
+        self->ob_type->tp_free((PyObject*)self);
     }
-    
-    if (!IS_NULL(self->context)) {
-        krb5_free_context(self->context);
-    }
-
-    if (!IS_NULL(self->realm)) {
-        free(self->realm);
-    }
-
-
-    self->ob_type->tp_free((PyObject*)self);
 }
-
+    
 static PyObject *PyKAdminObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
 
     PyKAdminObject *self; 
@@ -79,7 +80,7 @@ static PyObject *PyKAdminObject_delete_principal(PyKAdminObject *self, PyObject 
     if (!PyArg_ParseTuple(args, "s", &client_name))
         return NULL;
 
-    if (!IS_NULL(self->server_handle)) {
+    if (self->server_handle) {
 
         retval = krb5_parse_name(self->context, client_name, &princ);
         if (retval != 0x0) { PyKAdmin_RaiseKAdminError(retval, "krb5_parse_name"); return NULL; }
@@ -138,13 +139,13 @@ static PyObject *PyKAdminObject_create_principal(PyKAdminObject *self, PyObject 
 static PyKAdminPrincipalObject *PyKAdminObject_get_principal(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
 
     PyKAdminPrincipalObject *principal = NULL;
-    char *client_name; 
+    char *client_name = NULL;
 
     if (!PyArg_ParseTuple(args, "s", &client_name)) {
         return NULL;
     }
 
-    if (!IS_NULL(self->server_handle)) {
+    if (self->server_handle) {
         principal = PyKAdminPrincipalObject_principal_with_name(self, client_name);
 
     } 
@@ -194,14 +195,13 @@ static int kdb_iter_princs(void *data, krb5_db_entry *kdb) {
 
         if (self->each_principal.callback) {
             
-            result = PyObject_CallFunctionObjArgs(self->each_principal.callback, principal, self->each_principal.arg, NULL);
+            result = PyObject_CallFunctionObjArgs(self->each_principal.callback, principal, self->each_principal.data, NULL);
             
             if (!result) {
                 // use self to hold exception 
             }
 
         }
-        Py_XDECREF(args);
         KAdminPrincipal_destroy(principal);
     }
 
@@ -218,16 +218,16 @@ static PyObject *PyKAdminObject_each_principal(PyKAdminObject *self, PyObject *a
     kadm5_ret_t lock = 0; 
 
 
-    static char *kwlist[] = {"", "arg", "match", NULL};
+    static char *kwlist[] = {"", "data", "match", NULL};
     
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|Oz", kwlist, &PyFunction_Type, &self->each_principal.callback, &self->each_principal.arg, &match))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|Oz", kwlist, &PyFunction_Type, &self->each_principal.callback, &self->each_principal.data, &match))
         return NULL;
 
-    if (!self->each_principal.arg)
-        self->each_principal.arg = Py_None;
+    if (!self->each_principal.data)
+        self->each_principal.data = Py_None;
 
     Py_XINCREF(self->each_principal.callback);
-    Py_XINCREF(self->each_principal.arg);
+    Py_XINCREF(self->each_principal.data);
     
     lock = kadm5_lock(self->server_handle);
 
@@ -243,7 +243,7 @@ static PyObject *PyKAdminObject_each_principal(PyKAdminObject *self, PyObject *a
     }
 
     Py_XDECREF(self->each_principal.callback);
-    Py_XDECREF(self->each_principal.arg);
+    Py_XDECREF(self->each_principal.data);
 
     if (retval) {
         // TODO raise proper exception

@@ -85,7 +85,7 @@ class KAdminUnitTests(unittest.TestCase):
             self.stop()
       
         self.kadm = kadm
-       
+
     def test_init_with_keytab(self):
         
         try:    
@@ -196,52 +196,6 @@ class KAdminUnitTests(unittest.TestCase):
       
         self.assertEqual(count, size)
 
-    '''
-    def test_each_iteration(self):
-
-        kadm = self.kadm
-        count = [0]
-
-        size = database_size()
-
-        def fxn(princ):
-            count[0] += 1
-
-        kadm.each_principal(lambda princ: fxn(princ))
-
-        self.assertEqual(count[0], size)
-
-    '''
-    '''
-    unpack iteration is SLOW over GSSAPI connections, while still enabled it is advised that this is only used via kadmin.local
-    def test_unpack_iteration(self):
-
-        kadm = self.kadm
-        count = 0
-   
-        size = database_size()     
-
-        for princ in kadm.principals(unpack=True):
-            count += 1
-        
-        self.assertEqual(count, size)
-
-    def test_filter_iteration(self):
-
-        kadm = self.kadm
-        count = 0
-        
-        size = len(TEST_ACCOUNTS)
-
-        create_test_accounts()
-
-        for princ in kadm.principals('test*', unpack=True):
-            count += 1
-        
-        self.assertEqual(count, size)
-        
-        delete_test_accounts()
-    '''
         
     def test_not_exists(self):
         
@@ -254,6 +208,39 @@ class KAdminUnitTests(unittest.TestCase):
         princ = kadm.getprinc(account)
 
         self.assertIsNone(princ)
+
+
+    def test_princ_compare_eq(self):
+
+        kadm = self.kadm
+
+        create_test_accounts()
+
+        account = TEST_ACCOUNTS[0]
+
+        a = kadm.getprinc(account)
+        b = kadm.getprinc(account)
+
+        self.assertEqual(a, b)
+    
+
+    def test_princ_compare_ne(self):
+
+        kadm = self.kadm
+
+        create_test_accounts()
+
+        account = TEST_ACCOUNTS[0]
+
+        a = kadm.getprinc(account)
+
+        account = TEST_ACCOUNTS[1]
+
+        b = kadm.getprinc(account)
+
+        self.assertNotEqual(a, b)
+
+
 
 class KAdminLocalUnitTests(unittest.TestCase):
  
@@ -274,7 +261,8 @@ class KAdminLocalUnitTests(unittest.TestCase):
             self.stop()
       
         self.kadm = kadm
-
+    
+    
     def test_local(self):
         
         try:    
@@ -402,51 +390,12 @@ class KAdminLocalUnitTests(unittest.TestCase):
 
         size = database_size()
 
-        def fxn(princ):
-            count[0] += 1
+        def fxn(princ, data):
+            data[0] += 1
 
-        kadm.each_principal(lambda princ: fxn(princ))
+        kadm.each_principal(fxn, count)
 
         self.assertEqual(count[0], size)
-
-   
-    ''''
-    def test_unpack_iteration(self):
-
-        kadm = self.kadm
-        count = 0
-   
-        size = database_size()     
-
-        time_s = time.time()
-
-        for princ in kadm.principals(unpack=True):
-            count += 1
-
-        time_f = time.time()
-
-        time_d = time_f - time_s; 
-
-        logging.info("unpacked iteration: {0} principals unpacked in {1} seconds [{2} per second].".format(count, time_d, (count/time_d)))
-        
-        self.assertEqual(count, size)
-
-    def test_filter_iteration(self):
-
-        kadm = self.kadm
-        count = 0
-        
-        size = len(TEST_ACCOUNTS)
-
-        create_test_accounts()
-
-        for princ in kadm.principals('test[0-9][0-9]', unpack=True):
-            count += 1
-        
-        self.assertEqual(count, size)
-        
-        delete_test_accounts()
-    '''
 
     def test_not_exists(self):
         
@@ -459,6 +408,38 @@ class KAdminLocalUnitTests(unittest.TestCase):
         princ = kadm.getprinc(account)
 
         self.assertIsNone(princ)
+
+    
+    def test_princ_compare_eq(self):
+
+        kadm = self.kadm
+
+        create_test_accounts()
+
+        account = TEST_ACCOUNTS[0]
+
+        a = kadm.getprinc(account)
+        b = kadm.getprinc(account)
+
+        self.assertEqual(a, b)
+    
+
+    def test_princ_compare_ne(self):
+
+        kadm = self.kadm
+
+        create_test_accounts()
+
+        account = TEST_ACCOUNTS[0]
+
+        a = kadm.getprinc(account)
+
+        account = TEST_ACCOUNTS[1]
+
+        b = kadm.getprinc(account)
+
+        self.assertNotEqual(a, b)
+
 
 
 def main():

@@ -48,13 +48,13 @@ def callback_a(princ, data):
 	print(princ)
 
 def callback_b(princ, data):
-	print("{0}, {1}".format(data, princ))
+	print("{0}{1}".format(data, princ))
 
 # invoke callback_a for each principal, equivilent of the above iteration.
 kadm.each_principal(callback_a)
 
 # invoke callback_b for each principal resulting in "Hello, principal@EXAMPLE.COM"
-kadm.each_principal(callback_b, "Hello ")
+kadm.each_principal(callback_b, data="Hello, ")
 
 #
 # WARNING: unpack iteration deprecated in favor of "each iteration" with callbacks.

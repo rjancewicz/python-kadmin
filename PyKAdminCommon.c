@@ -25,18 +25,21 @@ krb5_error_code pykadmin_unpack_xdr_osa_princ_ent_rec(PyKAdminObject *kadmin, kr
         adb->admin_history_kvno = 0;
     }
 
-    xdrmem_create(&xdrs, (caddr_t)tl_data.tl_data_contents, tl_data.tl_data_length, XDR_DECODE);
+    if (tl_data.tl_data_length) {
+        xdrmem_create(&xdrs, (caddr_t)tl_data.tl_data_contents, tl_data.tl_data_length, XDR_DECODE);
 
-    if (!pykadmin_xdr_osa_princ_ent_rec(&xdrs, adb)) {
+        if (!pykadmin_xdr_osa_princ_ent_rec(&xdrs, adb)) {
+            xdr_destroy(&xdrs);
+            retval = KADM5_XDR_FAILURE;
+            goto done;
+        }
+
         xdr_destroy(&xdrs);
-        retval = KADM5_XDR_FAILURE;
-        goto done;
     }
 
-    xdr_destroy(&xdrs);
-
-    retval = KADM5_OK;
+    //retval = KADM5_OK;
 done: 
+
     return retval;
 }
 
@@ -152,7 +155,7 @@ krb5_error_code pykadmin_kadm_from_kdb(PyKAdminObject *kadmin, krb5_db_entry *kd
     }
 
     if ((mask & KADM5_MOD_NAME) || (mask & KADM5_MOD_TIME)) {
-        if ((retval = krb5_dbe_lookup_mod_princ_data(kadmin->context, kdb, &(entry->mod_date), &(entry->mod_name))));
+        if ((retval = krb5_dbe_lookup_mod_princ_data(kadmin->context, kdb, &(entry->mod_date), &(entry->mod_name))))
             goto done;
 
         if (! (mask & KADM5_MOD_TIME))
@@ -162,21 +165,22 @@ krb5_error_code pykadmin_kadm_from_kdb(PyKAdminObject *kadmin, krb5_db_entry *kd
             krb5_free_principal(kadmin->context, entry->mod_name);
             entry->mod_name = NULL;
         }
-    }
+    }  
+
 
     if (mask & KADM5_KVNO) {
-        for (entry->kvno = 0, i=0; i<kdb->n_key_data; i++)
+        entry->kvno = 0;
+        for (i = 0; i < kdb->n_key_data; i++) {
             if ((krb5_kvno) kdb->key_data[i].key_data_kvno > entry->kvno)
-                entry->kvno = kdb->key_data[i].key_data_kvno;
+                entry->kvno = (krb5_kvno) kdb->key_data[i].key_data_kvno;
+        }
     }
 
-    /* api vs github src differ come back to  
-    TODO
     if (mask & KADM5_MKVNO) {
-        if ((retval = krb5_dbe_get_mkvno(kadmin->context, kdb, &entry->mkvno)))
+        if ((retval = krb5_dbe_lookup_mkvno(kadmin->context, kdb, &entry->mkvno)))
             goto done;
     }
-    */
+    
 
 
     /* key data */
@@ -231,8 +235,9 @@ krb5_error_code pykadmin_kadm_from_kdb(PyKAdminObject *kadmin, krb5_db_entry *kd
 
     */
 
-    if ((retval = pykadmin_unpack_xdr_osa_princ_ent_rec(kadmin, kdb, adb)))
+    if ((retval = pykadmin_unpack_xdr_osa_princ_ent_rec(kadmin, kdb, adb))) {
         goto done;
+    }
 
     /* load data stored into the entry rec */
 
@@ -257,6 +262,96 @@ done:
     
     return retval;
 
+}
+
+
+int pykadmin_compare_tl_data(krb5_context ctx, krb5_tl_data *a, krb5_tl_data *b) {
+
+    int result = 1; 
+
+    if (a && b) {
+
+        result &= (a->tl_data_type == b->tl_data_type);
+        result &= (a->tl_data_length == b->tl_data_length);
+
+        if (result)
+            result &= (memcmp(a->tl_data_contents, b->tl_data_contents, a->tl_data_length) == 0);
+    } else {
+
+        result &= (a == b);
+    } 
+
+    // tl_data_next 
+
+    return result;
+}
+
+
+
+int pykadmin_compare_key_data(krb5_context ctx, krb5_key_data *a, krb5_key_data *b) {
+    
+    int result = 1; 
+    int i, idx; 
+
+    if (a && b) {
+        result &= (a->key_data_ver == b->key_data_ver);
+        result &= (a->key_data_kvno == b->key_data_kvno);
+
+        if (result) {
+
+            idx = (a->key_data_ver == 1 ? 1 : 2);
+            for (i = 0; i < idx; i++) {
+
+                result &= (a->key_data_type[i] == b->key_data_type[i]);
+                result &= (a->key_data_length[i] == b->key_data_length[i]);
+
+                if (result)
+                    result &= (memcmp(a->key_data_contents[i], b->key_data_contents[i], a->key_data_length[i]) == 0);
+            }
+        }
+    } else {
+
+        result &= (a == b);
+    }
+
+
+    return result;
+}
+
+int pykadmin_principal_ent_rec_compare(krb5_context ctx, kadm5_principal_ent_rec *a, kadm5_principal_ent_rec *b) {
+
+    int result = 1; 
+
+    result &= krb5_principal_compare(ctx, a->principal, b->principal);
+
+    result &= (a->princ_expire_time == b->princ_expire_time);
+    result &= (a->last_pwd_change == b->last_pwd_change);
+    result &= (a->pw_expiration == b->pw_expiration);
+    result &= (a->max_life == b->max_life);
+    
+    result &= krb5_principal_compare(ctx, a->mod_name, b->mod_name);
+
+    result &= (a->mod_date == b->mod_date);
+    result &= (a->attributes == b->attributes);
+
+    result &= (a->kvno == b->kvno);
+    result &= (a->mkvno == b->mkvno);
+
+    if (a->policy && b->policy)
+        result &= (strcmp(a->policy, b->policy) == 0);
+
+    result &= (a->max_renewable_life == b->max_renewable_life);
+    result &= (a->last_success == b->last_success);
+    result &= (a->last_failed == b->last_failed);
+    result &= (a->fail_auth_count == b->fail_auth_count);
+    result &= (a->n_key_data == b->n_key_data);
+    result &= (a->n_tl_data == b->n_tl_data);
+
+    result &= pykadmin_compare_tl_data(ctx, a->tl_data, b->tl_data);
+
+    result &= pykadmin_compare_key_data(ctx, a->key_data, b->key_data);
+
+    return result; 
 }
 
 
