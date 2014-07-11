@@ -10,7 +10,7 @@
 #define Principal_Check(princ) PyObject_TypeCheck(princ, &PyKAdminPrincipalObject_Type)
 
 static void KAdminPrincipal_dealloc(PyKAdminPrincipalObject *self) {
-    
+
     kadm5_free_principal_ent(self->kadmin->server_handle, &self->entry);
 
     Py_XDECREF(self->kadmin);
@@ -113,6 +113,25 @@ static PyObject *KAdminPrincipal_set_expire(PyKAdminPrincipalObject *self, PyObj
     Py_RETURN_TRUE;
 }
 
+static PyObject *KAdminPrincipal_set_pwexpire(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
+    
+    kadm5_ret_t retval; 
+    time_t date     = 0; 
+    char *expire    = NULL;
+
+    if (!PyArg_ParseTuple(args, "s", &expire))
+        return NULL;
+    
+    date = get_date(expire);
+
+    self->entry.pw_expiration = date;
+
+    retval = kadm5_modify_principal(self->kadmin->server_handle, &self->entry, KADM5_PW_EXPIRATION);
+    if (retval != 0x0) { PyKAdmin_RaiseKAdminError(retval, "kadm5_modify_principal"); return NULL; }
+
+    Py_RETURN_TRUE;
+}
+
 static PyObject *KAdminPrincipal_set_policy(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
     
     kadm5_ret_t retval; 
@@ -121,7 +140,13 @@ static PyObject *KAdminPrincipal_set_policy(PyKAdminPrincipalObject *self, PyObj
     if (!PyArg_ParseTuple(args, "s", &policy))
         return NULL;
     
-    strcpy(self->entry.policy, policy);
+    // If we already allocated a policy string, free it
+    if (self->entry.policy != NULL) { 
+        free(self->entry.policy);
+    }
+    
+    // Copy the string so we can use it after Python frees it
+    self->entry.policy = strdup(policy);
 
     retval = kadm5_modify_principal(self->kadmin->server_handle, &self->entry, KADM5_POLICY);
     if (retval != 0x0) { PyKAdmin_RaiseKAdminError(retval, "kadm5_modify_principal"); return NULL; }
@@ -294,6 +319,7 @@ static PyMethodDef KAdminPrincipal_methods[] = {
     {"randomize_key",   (PyCFunction)KAdminPrincipal_randomize_key,     METH_VARARGS, ""},
     
     {"expire",          (PyCFunction)KAdminPrincipal_set_expire,     METH_VARARGS, ""},
+    {"pwexpire",        (PyCFunction)KAdminPrincipal_set_pwexpire,   METH_VARARGS, ""},
     {"set_policy",      (PyCFunction)KAdminPrincipal_set_policy,     METH_VARARGS, ""},
     {"clear_policy",    (PyCFunction)KAdminPrincipal_clear_policy,   METH_VARARGS, ""},
 
