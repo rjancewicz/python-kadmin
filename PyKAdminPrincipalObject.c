@@ -213,12 +213,12 @@ static PyObject *KAdminPrincipal_change_password(PyKAdminPrincipalObject *self, 
     }
 }
 
-static PyObject *KAdminPrincipal_randomize_key(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
+static PyObject *KAdminPrincipal_randomize_key(PyKAdminPrincipalObject *self) {
 
     kadm5_ret_t retval = KADM5_OK; 
-    char *canon = NULL;
+    char *client_name = NULL;
 
-    retval = krb5_unparse_name(self->kadmin->context, self->entry.principal, &canon);
+    retval = krb5_unparse_name(self->kadmin->context, self->entry.principal, &client_name);
     if (retval != KADM5_OK) { PyKAdmin_RaiseKAdminError(retval, "krb5_unparse_name"); return NULL; }
 
     retval = kadm5_randkey_principal(self->kadmin->server_handle, self->entry.principal, NULL, NULL);
@@ -230,25 +230,17 @@ static PyObject *KAdminPrincipal_randomize_key(PyKAdminPrincipalObject *self, Py
     
 }
 
-/*
-static PyObject *KAdminPrincipal_get_name(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
+static PyObject *KAdminPrincipal_reload(PyKAdminPrincipalObject *self) {
 
     kadm5_ret_t retval = KADM5_OK; 
-    char *client_name = NULL;
-    PyObject *name = NULL;
 
-    if (self->kadmin) {
-        
-        retval = krb5_unparse_name(self->kadmin->context, self->entry.principal, &client_name);
-        if (retval != KADM5_OK) {}
-
-        name = Py_BuildValue("z", client_name);
-
+    if (self) {
+        retval = kadm5_get_principal(self->kadmin->server_handle, self->entry.principal, &self->entry, KADM5_PRINCIPAL_NORMAL_MASK);
+        if (retval != KADM5_OK) { PyKAdmin_RaiseKAdminError(retval, "kadm5_get_principal"); return NULL; }
     }
-    
-    return name;
+
+    Py_RETURN_TRUE;
 }
-*/
 
 PyObject *PyKAdminPrincipal_RichCompare(PyObject *o1, PyObject *o2, int opid) {
 
@@ -285,14 +277,14 @@ done:
 static PyMethodDef KAdminPrincipal_methods[] = {
     {"cpw",             (PyCFunction)KAdminPrincipal_change_password,   METH_VARARGS, ""},
     {"change_password", (PyCFunction)KAdminPrincipal_change_password,   METH_VARARGS, ""},
-    {"randkey",         (PyCFunction)KAdminPrincipal_randomize_key,     METH_VARARGS, ""},
-    {"randomize_key",   (PyCFunction)KAdminPrincipal_randomize_key,     METH_VARARGS, ""},
+    {"randkey",         (PyCFunction)KAdminPrincipal_randomize_key,     METH_NOARGS, ""},
+    {"randomize_key",   (PyCFunction)KAdminPrincipal_randomize_key,     METH_NOARGS, ""},
     
-    {"expire",          (PyCFunction)KAdminPrincipal_set_expire,     METH_VARARGS, ""},
-    {"set_policy",      (PyCFunction)KAdminPrincipal_set_policy,     METH_VARARGS, ""},
-    {"clear_policy",    (PyCFunction)KAdminPrincipal_clear_policy,   METH_VARARGS, ""},
+    {"expire",          (PyCFunction)KAdminPrincipal_set_expire,        METH_VARARGS, ""},
+    {"set_policy",      (PyCFunction)KAdminPrincipal_set_policy,        METH_VARARGS, ""},
+    {"clear_policy",    (PyCFunction)KAdminPrincipal_clear_policy,      METH_VARARGS, ""},
 
-    //{"name",            (PyCFunction)KAdminPrincipal_get_name,        METH_VARARGS, ""},
+    {"reload",          (PyCFunction)KAdminPrincipal_reload,            METH_NOARGS, ""},
 
     {NULL, NULL, 0, NULL}
 };
@@ -312,35 +304,11 @@ static PyObject *PyKAdminPrincipal_get_principal(PyKAdminPrincipalObject *self, 
     return principal;
 }
 
-/*
-static PyObject *PyKAdminPrincipal_get_policy(PyKAdminPrincipalObject *self, void *closure) {
-
-    PyObject *result = Py_None;
-
-    if (self && self->entry.policy) {
-        result = PyString_FromString(self->entry.policy);
-        if (!result) {
-            result = Py_None;
-        }
-    } 
-
-    Py_INCREF(result);
-    return result;
-}
-*/
 
 static PyGetSetDef KAdminPrincipal_getters_setters[] = {
 
-    // {"policy", (getter)PyKAdminPrincipal_get_policy, (setter)PyKAdminPrincipal_set_policy, "Kerberos Policy"},
-    // {"principal", (getter)PyKAdminPrincipal_get_principal, (setter)PyKAdminPrincipal_set_principal, "Kerberos Principal"},
-    // {"policy", (getter)PyKAdminPrincipal_get_policy, NULL, "Kerberos Policy"},
-
-    // {(char *)name, (getter) get, (setter) set, (char *) doc, (void *) closure},
-
     {"principal", (getter)PyKAdminPrincipal_get_principal,  NULL, "Kerberos Principal", NULL},
     {"name",      (getter)PyKAdminPrincipal_get_principal,  NULL, "Kerberos Principal", NULL},
-
-    //{"policy",    (getter)PyKAdminPrincipal_get_policy,     NULL, "principal policy", NULL},
 
     {NULL, NULL, NULL, NULL, NULL}
 };
