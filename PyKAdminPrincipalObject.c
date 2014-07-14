@@ -218,16 +218,11 @@ static PyObject *KAdminPrincipal_change_password(PyKAdminPrincipalObject *self, 
 static PyObject *KAdminPrincipal_randomize_key(PyKAdminPrincipalObject *self) {
 
     kadm5_ret_t retval = KADM5_OK; 
-    char *client_name = NULL;
-
-    retval = krb5_unparse_name(self->kadmin->context, self->entry.principal, &client_name);
-    if (retval != KADM5_OK) { PyKAdmin_RaiseKAdminError(retval, "krb5_unparse_name"); return NULL; }
 
     retval = kadm5_randkey_principal(self->kadmin->server_handle, self->entry.principal, NULL, NULL);
     if (retval != KADM5_OK) { PyKAdmin_RaiseKAdminError(retval, "kadm5_randkey_principal"); return NULL; }
 
     Py_RETURN_TRUE;
-    
 }
 
 PyObject *PyKAdminPrincipal_RichCompare(PyObject *o1, PyObject *o2, int opid) {
