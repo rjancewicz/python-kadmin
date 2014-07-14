@@ -348,29 +348,24 @@ static PyObject *PyKAdminObject_each_policy(PyKAdminObject *self, PyObject *args
 }
 
 
-static PyKAdminPrincipalObject *PyKAdminObject_list_principals(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
-
-
-    return NULL;
-}
-
-
 static PyMethodDef PyKAdminObject_methods[] = {
-
-    {"getprinc",            (PyCFunction)PyKAdminObject_get_principal,    METH_VARARGS, ""},
-    {"get_principal",       (PyCFunction)PyKAdminObject_get_principal,    METH_VARARGS, ""},
-    
-    {"getpol",              (PyCFunction)PyKAdminObject_get_policy,       METH_VARARGS, ""},
-    {"get_policy",          (PyCFunction)PyKAdminObject_get_policy,       METH_VARARGS, ""},
-
-    {"delprinc",            (PyCFunction)PyKAdminObject_delete_principal, METH_VARARGS, ""},
-    {"delete_principal",    (PyCFunction)PyKAdminObject_delete_principal, METH_VARARGS, ""},
 
     {"ank",                 (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
     {"addprinc",            (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
     {"add_principal",       (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
+
+    {"delprinc",            (PyCFunction)PyKAdminObject_delete_principal, METH_VARARGS, ""},
+    {"delete_principal",    (PyCFunction)PyKAdminObject_delete_principal, METH_VARARGS, ""},
+
+    // kadmin modify princ, rename princ 
+
+    {"getprinc",            (PyCFunction)PyKAdminObject_get_principal,    METH_VARARGS, ""},
+    {"get_principal",       (PyCFunction)PyKAdminObject_get_principal,    METH_VARARGS, ""},
+
+
     
-    {"list_principals",     (PyCFunction)PyKAdminObject_list_principals,  METH_VARARGS, ""},
+    {"getpol",              (PyCFunction)PyKAdminObject_get_policy,       METH_VARARGS, ""},
+    {"get_policy",          (PyCFunction)PyKAdminObject_get_policy,       METH_VARARGS, ""},
 
     {"principals",          (PyCFunction)PyKAdminObject_principal_iter,   (METH_VARARGS | METH_KEYWORDS), ""},
     {"policies",            (PyCFunction)PyKAdminObject_policy_iter,      (METH_VARARGS | METH_KEYWORDS), ""},
