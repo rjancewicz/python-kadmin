@@ -203,15 +203,21 @@ static int kdb_iter_princs(void *data, krb5_db_entry *kdb) {
     PyKAdminObject *self = (PyKAdminObject *)data;
 
     PyObject *result = NULL;
+    //PyObject *args   = NULL;
 
-    PyKAdminPrincipalObject *principal = PyKadminPrincipalObject_principal_with_db_entry(self, kdb);
+    PyKAdminPrincipalObject *principal = PyKAdminPrincipalObject_principal_with_db_entry(self, kdb);
 
     if (principal) {
 
         if (self->each_principal.callback) {
+
+            //args = PyTuple_Pack(2, principal, self->each_principal.data);
             
+            //result = PyObject_Call(self->each_principal.callback, args, NULL);
             result = PyObject_CallFunctionObjArgs(self->each_principal.callback, principal, self->each_principal.data, NULL);
             
+            //Py_DECREF(args);
+
             if (!result) {
                 // use self to hold exception 
             }
@@ -235,15 +241,19 @@ static PyObject *PyKAdminObject_each_principal(PyKAdminObject *self, PyObject *a
 
     static char *kwlist[] = {"", "data", "match", NULL};
     
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|Oz", kwlist, &PyFunction_Type, &self->each_principal.callback, &self->each_principal.data, &match))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|Oz", kwlist, /*&PyFunction_Type,*/ &self->each_principal.callback, &self->each_principal.data, &match))
         return NULL;
 
     if (!self->each_principal.data)
         self->each_principal.data = Py_None;
 
+
+
     Py_XINCREF(self->each_principal.callback);
     Py_XINCREF(self->each_principal.data);
     
+
+
     lock = kadm5_lock(self->server_handle);
 
     if (!lock || (lock == KRB5_PLUGIN_OP_NOTSUPP)) {
@@ -346,6 +356,7 @@ static PyKAdminPrincipalObject *PyKAdminObject_list_principals(PyKAdminObject *s
 
 
 static PyMethodDef PyKAdminObject_methods[] = {
+
     {"getprinc",            (PyCFunction)PyKAdminObject_get_principal,    METH_VARARGS, ""},
     {"get_principal",       (PyCFunction)PyKAdminObject_get_principal,    METH_VARARGS, ""},
     
@@ -356,8 +367,9 @@ static PyMethodDef PyKAdminObject_methods[] = {
     {"delete_principal",    (PyCFunction)PyKAdminObject_delete_principal, METH_VARARGS, ""},
 
     {"ank",                 (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
-    {"create_princ",        (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
-    {"create_principal",    (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
+    {"addprinc",            (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
+    {"add_principal",       (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
+    
     {"list_principals",     (PyCFunction)PyKAdminObject_list_principals,  METH_VARARGS, ""},
 
     {"principals",          (PyCFunction)PyKAdminObject_principal_iter,   (METH_VARARGS | METH_KEYWORDS), ""},
