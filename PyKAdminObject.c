@@ -369,6 +369,12 @@ static PyMethodDef PyKAdminObject_methods[] = {
 
     {"principals",          (PyCFunction)PyKAdminObject_principal_iter,   (METH_VARARGS | METH_KEYWORDS), ""},
     {"policies",            (PyCFunction)PyKAdminObject_policy_iter,      (METH_VARARGS | METH_KEYWORDS), ""},
+
+    // todo implement
+    {"lock",                (PyCFunction)NULL,                            METH_NOARGS, ""},
+    {"unlock",              (PyCFunction)NULL,                            METH_NOARGS, ""},
+
+
     
     #ifdef KADMIN_LOCAL
     /*
