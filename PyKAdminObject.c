@@ -374,8 +374,6 @@ static PyMethodDef PyKAdminObject_methods[] = {
     {"lock",                (PyCFunction)NULL,                            METH_NOARGS, ""},
     {"unlock",              (PyCFunction)NULL,                            METH_NOARGS, ""},
 
-
-    
     #ifdef KADMIN_LOCAL
     /*
         due to the nature of how the kadm5clnt library interfaces with the kerberos database over the rpc layer 
