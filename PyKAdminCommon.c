@@ -101,7 +101,6 @@ static krb5_tl_data *dup_tl_data(krb5_tl_data *tl)
     return n;
 }
 
-
 krb5_error_code pykadmin_kadm_from_kdb(PyKAdminObject *kadmin, krb5_db_entry *kdb, kadm5_principal_ent_rec *entry, long mask) {
 
     krb5_error_code retval = 0; 

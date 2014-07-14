@@ -22,6 +22,8 @@ typedef struct {
 
 PyTypeObject PyKAdminPolicyObject_Type;
 
+#define PyKAdminPolicy_Check(policy) PyObject_TypeCheck(policy, &PyKAdminPolicyObject_Type)
+
 PyKAdminPolicyObject *PyKAdminPolicyObject_policy_with_name(PyKAdminObject *kadmin, char *name);
 PyKAdminPolicyObject *PyKAdminPolicyObject_policy_with_osa_entry(PyKAdminObject *kadmin, osa_policy_ent_rec *entry);
 
