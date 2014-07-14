@@ -147,7 +147,6 @@ static PyObject *KAdminPrincipal_set_policy(PyKAdminPrincipalObject *self, PyObj
 
 
 
-
 static PyObject *_KAdminPrincipal_load_principal(PyKAdminPrincipalObject *self, char *client_name) {
 
     kadm5_ret_t retval = KADM5_OK;
@@ -189,20 +188,6 @@ static PyObject *KAdminPrincipal_reload(PyKAdminPrincipalObject *self) {
     Py_RETURN_TRUE;
 }
 
-
-/*
-static PyObject *_KAdminPrincipal_refresh_principal(PyKAdminPrincipalObject *self) {
-
-    kadm5_ret_t retval = KADM5_OK; 
-
-    retval = kadm5_get_principal(self->kadmin->server_handle, self->entry.principal, &self->entry, KADM5_PRINCIPAL_NORMAL_MASK);
-    if (retval != KADM5_OK) { PyKAdmin_RaiseKAdminError(retval, "kadm5_get_principal"); return NULL; }
-
-    Py_RETURN_NONE;
-
-}
-*/
-
 static PyObject *KAdminPrincipal_change_password(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
 
     kadm5_ret_t retval = KADM5_OK; 
@@ -222,9 +207,7 @@ static PyObject *KAdminPrincipal_change_password(PyKAdminPrincipalObject *self, 
         
         retval = kadm5_chpass_principal(self->kadmin->server_handle, self->entry.principal, password);
         if (retval != 0x0) { PyKAdmin_RaiseKAdminError(retval, "kadm5_chpass_principal"); return NULL; }
-            
-        KAdminPrincipal_reload(self);
-        
+
         Py_RETURN_TRUE;
 
     } else {
@@ -242,8 +225,6 @@ static PyObject *KAdminPrincipal_randomize_key(PyKAdminPrincipalObject *self) {
 
     retval = kadm5_randkey_principal(self->kadmin->server_handle, self->entry.principal, NULL, NULL);
     if (retval != KADM5_OK) { PyKAdmin_RaiseKAdminError(retval, "kadm5_randkey_principal"); return NULL; }
-
-    KAdminPrincipal_reload(self);
 
     Py_RETURN_TRUE;
     
