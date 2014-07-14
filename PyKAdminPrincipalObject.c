@@ -192,27 +192,14 @@ static PyObject *KAdminPrincipal_change_password(PyKAdminPrincipalObject *self, 
 
     kadm5_ret_t retval = KADM5_OK; 
     char *password     = NULL;
-    char *canon        = NULL;
 
     if (!PyArg_ParseTuple(args, "s", &password))
         return NULL; 
 
-    if (password) {
+    retval = kadm5_chpass_principal(self->kadmin->server_handle, self->entry.principal, password);
+    if (retval != KADM5_OK) { PyKAdmin_RaiseKAdminError(retval, "kadm5_chpass_principal"); return NULL; }
 
-        retval = krb5_unparse_name(self->kadmin->context, self->entry.principal, &canon);
-
-        if (retval) {
-            printf("krb5_unparse_name failure: %ld\n", retval); 
-        }
-        
-        retval = kadm5_chpass_principal(self->kadmin->server_handle, self->entry.principal, password);
-        if (retval != 0x0) { PyKAdmin_RaiseKAdminError(retval, "kadm5_chpass_principal"); return NULL; }
-
-        Py_RETURN_TRUE;
-
-    } else {
-        Py_RETURN_FALSE;
-    }
+    Py_RETURN_TRUE;
 }
 
 static PyObject *KAdminPrincipal_randomize_key(PyKAdminPrincipalObject *self) {
