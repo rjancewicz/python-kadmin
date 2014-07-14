@@ -86,6 +86,8 @@ class KAdminUnitTests(unittest.TestCase):
       
         self.kadm = kadm
 
+        self.logger = logging.getLogger('python-kadmin')
+
     def test_init_with_keytab(self):
         
         try:    
@@ -261,6 +263,8 @@ class KAdminLocalUnitTests(unittest.TestCase):
             self.stop()
       
         self.kadm = kadm
+
+        self.logger = logging.getLogger('python-kadmin')
     
     
     def test_local(self):
@@ -388,12 +392,22 @@ class KAdminLocalUnitTests(unittest.TestCase):
         kadm = self.kadm
         count = [0]
 
+        delta = 0
+
         size = database_size()
+
+        start = time.time()
 
         def fxn(princ, data):
             data[0] += 1
 
         kadm.each_principal(fxn, count)
+
+        end = time.time()
+
+        delta = end - start
+
+        self.logger.info("each iteration {0} principals in {1} seconds. [{2} principals/second]".format(count[0], delta, (count[0]/delta)))
 
         self.assertEqual(count[0], size)
 
