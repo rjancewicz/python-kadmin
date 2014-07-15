@@ -230,7 +230,7 @@ static int kdb_iter_princs(void *data, krb5_db_entry *kdb) {
             }
 
         }
-        KAdminPrincipal_destroy(principal);
+        PyKAdminPrincipalObject_destroy(principal);
     }
 
     return 0;

@@ -525,7 +525,7 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_db_entry(PyKAdmi
     return principal;
 }
 
-void KAdminPrincipal_destroy(PyKAdminPrincipalObject *self) {
+void PyKAdminPrincipalObject_destroy(PyKAdminPrincipalObject *self) {
     PyKAdminPrincipal_dealloc(self);
 }
 
