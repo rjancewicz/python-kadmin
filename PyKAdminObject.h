@@ -23,6 +23,8 @@ typedef struct {
     
     each_iteration_t each_principal;
     each_iteration_t each_policy;
+
+    PyObject *_storage; 
     
 } PyKAdminObject;
 

@@ -3,6 +3,7 @@
 #define PYKADMINCOMMON_H
 
 #include <Python.h>
+
 #include <kdb.h>
 #include <kadm5/admin.h>
 #include <krb5/krb5.h>
@@ -10,6 +11,9 @@
 
 #include "PyKAdminXDR.h"
 #include "PyKAdminObject.h"
+
+PyObject *pykadmin_pydatetime_from_timestamp(time_t timestamp);
+
 
 krb5_error_code pykadmin_kadm_from_kdb(PyKAdminObject *kadmin, krb5_db_entry *kdb, kadm5_principal_ent_rec *entry, long mask); 
 

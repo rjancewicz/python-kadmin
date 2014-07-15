@@ -7,6 +7,54 @@
 
 #include "PyKAdminCommon.h"
 
+#include <datetime.h>
+
+/*
+kadm_principal_ent_rec reference
+
+typedef struct _kadm5_principal_ent_t {
+
+    // done
+    krb5_principal  principal;
+    krb5_principal  mod_name;
+
+    // how to expose timestamps? 
+    krb5_timestamp  princ_expire_time;
+    krb5_timestamp  last_pwd_change;
+    krb5_timestamp  pw_expiration;
+    krb5_timestamp  mod_date;
+
+    krb5_deltat     max_life;
+
+    krb5_kvno       kvno;
+    krb5_kvno       mkvno;
+
+    char            *policy;
+
+    krb5_flags      attributes;
+    long            aux_attributes;
+
+    // version 2 fields 
+
+    krb5_timestamp last_success;
+    krb5_timestamp last_failed;
+
+    krb5_deltat max_renewable_life;
+
+    krb5_kvno fail_auth_count;
+
+    // these should not be accessed or modified directly by python.
+    krb5_int16 n_key_data;
+    krb5_int16 n_tl_data;
+    krb5_tl_data *tl_data;
+    krb5_key_data *key_data;
+
+} kadm5_principal_ent_rec, *kadm5_principal_ent_t;
+*/
+
+
+
+
 static void KAdminPrincipal_dealloc(PyKAdminPrincipalObject *self) {
     
     kadm5_free_principal_ent(self->kadmin->server_handle, &self->entry);
@@ -26,10 +74,12 @@ static PyObject *KAdminPrincipal_new(PyTypeObject *type, PyObject *args, PyObjec
         return NULL;
     
     memset(&self->entry, 0, sizeof(kadm5_principal_ent_rec));
-    return (PyObject *)self;    
+    return (PyObject *)self;
+
 }
 
 static int KAdminPrincipal_init(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
+
     return 0;
 }
 
@@ -72,17 +122,16 @@ static int KAdminPrincipal_print(PyKAdminPrincipalObject *self, FILE *file, int 
 static PyMemberDef KAdminPrincipal_members[] = {
 
 
-    {"last_password_change",        T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, last_pwd_change),       READONLY, ""},
-    {"expire_time",                 T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, princ_expire_time),     READONLY, ""},
-    {"password_expiration",         T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, pw_expiration),         READONLY, ""},
-    {"modified_time",               T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, mod_date),              READONLY, ""},
-    {"max_life",                    T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, max_life),              READONLY, ""},
+    //{"last_password_change",        T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, last_pwd_change),       READONLY, ""},
+    //{"expire_time",                 T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, princ_expire_time),     READONLY, ""},
+    //{"password_expiration",         T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, pw_expiration),         READONLY, ""},
+    //{"modified_time",               T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, mod_date),              READONLY, ""},
+    //{"max_life",                    T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, max_life),              READONLY, ""},
+    //{"max_renewable_life",          T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, max_renewable_life),    READONLY, ""},
+    //{"last_success",                T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, last_success),          READONLY, ""},
+    //{"last_failed",                 T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, last_failed),           READONLY, ""},
     
-    {"max_renewable_life",          T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, max_renewable_life),    READONLY, ""},
-    {"last_success",                T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, last_success),          READONLY, ""},
-    {"last_failed",                 T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, last_failed),           READONLY, ""},
     {"failed_auth_count",           T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, fail_auth_count),       READONLY, ""},
-    
     {"key_version_number",          T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, kvno),                  READONLY, ""},
     {"master_key_version_number",   T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, mkvno),                 READONLY, ""},
 
@@ -131,6 +180,8 @@ static PyObject *KAdminPrincipal_clear_policy(PyKAdminPrincipalObject *self) {
 static PyObject *KAdminPrincipal_set_policy(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
     
     kadm5_ret_t retval = KADM5_OK;
+
+    //  todo: parse as a pyobject, if we pass in a PolicyObject we need to accept that too.
 
     if (!PyArg_ParseTuple(args, "|z", &self->entry.policy))
         return NULL;
@@ -263,22 +314,149 @@ static PyMethodDef KAdminPrincipal_methods[] = {
 
 static PyObject *PyKAdminPrincipal_get_principal(PyKAdminPrincipalObject *self, void *closure) {
   
-    char *client_name = NULL;
+    krb5_error_code ret = 0;
+    PyObject *principal = NULL;
+    char *client_name   = NULL;
     
-    krb5_unparse_name(self->kadmin->context, self->entry.principal, &client_name);
+    // todo: handle error
+    ret = krb5_unparse_name(self->kadmin->context, self->entry.principal, &client_name);
 
-    PyObject *principal = Py_BuildValue("s", client_name);
-
-    free(client_name);
+    if (client_name) {
+        principal = PyString_FromString(client_name);
+        free(client_name);
+    }
 
     return principal;
 }
+
+
+static PyObject *PyKAdminPrincipal_get_mod_name(PyKAdminPrincipalObject *self, void *closure) {
+  
+    krb5_error_code ret = 0;
+    PyObject *principal = NULL;
+    char *client_name   = NULL;
+    
+    // todo: handle error
+    ret = krb5_unparse_name(self->kadmin->context, self->entry.mod_name, &client_name);
+
+    if (client_name) {
+        principal = PyString_FromString(client_name);
+        free(client_name);
+    }
+
+    return principal;
+}
+
+static PyObject *PyKAdminPrincipal_get_last_pwd_change(PyKAdminPrincipalObject *self, void *closure) {
+
+    PyObject *value = NULL;
+
+    value = pykadmin_pydatetime_from_timestamp(self->entry.last_pwd_change);
+
+    if (!value) {
+        // todo: raise exception
+    }
+
+    return value;
+}
+
+static PyObject *PyKAdminPrincipal_get_princ_expire_time(PyKAdminPrincipalObject *self, void *closure) {
+
+    PyObject *value = NULL;
+
+    value = pykadmin_pydatetime_from_timestamp(self->entry.princ_expire_time);
+    
+    if (!value) {
+        // todo: raise exception
+    }
+
+    return value;
+}
+
+static PyObject *PyKAdminPrincipal_get_pw_expiration(PyKAdminPrincipalObject *self, void *closure) {
+
+    PyObject *value = NULL;
+
+    value = pykadmin_pydatetime_from_timestamp(self->entry.pw_expiration);
+    
+    if (!value) {
+        // todo: raise exception
+    }
+
+    return value;
+}
+
+static PyObject *PyKAdminPrincipal_get_mod_date(PyKAdminPrincipalObject *self, void *closure) {
+
+    PyObject *value = NULL;
+
+    value = pykadmin_pydatetime_from_timestamp(self->entry.mod_date);
+    
+    if (!value) {
+        // todo: raise exception
+    }
+
+    return value;
+}
+
+static PyObject *PyKAdminPrincipal_get_last_success(PyKAdminPrincipalObject *self, void *closure) {
+
+    PyObject *value = NULL;
+
+    value = pykadmin_pydatetime_from_timestamp(self->entry.last_success);
+    
+    if (!value) {
+        // todo: raise exception
+    }
+
+    return value;
+}
+
+static PyObject *PyKAdminPrincipal_get_last_failed(PyKAdminPrincipalObject *self, void *closure) {
+
+    PyObject *value = NULL;
+
+    value = pykadmin_pydatetime_from_timestamp(self->entry.last_failed);
+    
+    if (!value) {
+        // todo: raise exception
+    }
+
+    return value;
+}
+
+static PyObject *PyKAdminPrincipal_get_max_renewable_life(PyKAdminPrincipalObject *self, void *closure) {
+
+    PyDateTime_IMPORT;
+
+    PyObject *value = NULL;
+
+    value = PyDelta_FromDSU(0, self->entry.max_renewable_life, 0);
+    
+    if (!value) {
+        // todo: raise exception
+    }
+
+    return value;
+}
+
+
 
 
 static PyGetSetDef KAdminPrincipal_getters_setters[] = {
 
     {"principal", (getter)PyKAdminPrincipal_get_principal,  NULL, "Kerberos Principal", NULL},
     {"name",      (getter)PyKAdminPrincipal_get_principal,  NULL, "Kerberos Principal", NULL},
+    {"mod_name",  (getter)PyKAdminPrincipal_get_mod_name,   NULL, "Kerberos Principal", NULL},
+
+    {"last_password_change", (getter)PyKAdminPrincipal_get_last_pwd_change,    NULL, "Kerberos Principal", NULL},
+    {"expire_time",          (getter)PyKAdminPrincipal_get_princ_expire_time,  NULL, "Kerberos Principal", NULL},
+    {"password_expiration",  (getter)PyKAdminPrincipal_get_pw_expiration,      NULL, "Kerberos Principal", NULL},
+    {"mod_date",             (getter)PyKAdminPrincipal_get_mod_date,           NULL, "Kerberos Principal", NULL},
+    {"last_success",         (getter)PyKAdminPrincipal_get_last_success,       NULL, "Kerberos Principal", NULL},
+    {"last_failure",         (getter)PyKAdminPrincipal_get_last_failed,        NULL, "Kerberos Principal", NULL},
+
+    {"max_renewable_life",   (getter)PyKAdminPrincipal_get_max_renewable_life, NULL, "Kerberos Principal", NULL},
 
     {NULL, NULL, NULL, NULL, NULL}
 };

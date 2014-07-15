@@ -11,6 +11,26 @@ kadm5_get_principal(void *server_handle, krb5_principal principal,
 	*/
 
 #include "PyKAdminCommon.h"
+#include <datetime.h>
+
+
+PyObject *pykadmin_pydatetime_from_timestamp(time_t timestamp) {
+
+    PyDateTime_IMPORT;
+
+    PyObject *datetime = NULL;
+    PyObject *args     = NULL;
+
+    args = Py_BuildValue("(i)", timestamp);
+
+    if (args) {
+        datetime = PyDateTime_FromTimestamp(args);
+        Py_DECREF(args);
+    }
+
+    return datetime;
+
+}
 
 krb5_error_code pykadmin_unpack_xdr_osa_princ_ent_rec(PyKAdminObject *kadmin, krb5_db_entry *kdb, osa_princ_ent_rec *adb) {
 

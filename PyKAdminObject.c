@@ -58,6 +58,10 @@ static PyObject *PyKAdminObject_new(PyTypeObject *type, PyObject *args, PyObject
         //if (!self->realm) {
         //    // todo : fail 
         //}
+
+        self->_storage = PyDict_New();
+
+        
     }
 
     return (PyObject *)self;    
