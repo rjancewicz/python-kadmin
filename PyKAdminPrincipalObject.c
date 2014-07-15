@@ -64,7 +64,7 @@ static void PyKAdminPrincipal_dealloc(PyKAdminPrincipalObject *self) {
     self->ob_type->tp_free((PyObject*)self);
 }
 
-static PyObject *KAdminPrincipal_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+static PyObject *PyKAdminPrincipal_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
 
     PyKAdminPrincipalObject *self;
 
@@ -78,14 +78,14 @@ static PyObject *KAdminPrincipal_new(PyTypeObject *type, PyObject *args, PyObjec
 
 }
 
-static int KAdminPrincipal_init(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
+static int PyKAdminPrincipal_init(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
 
     return 0;
 }
 
 
 
-static int KAdminPrincipal_print(PyKAdminPrincipalObject *self, FILE *file, int flags){
+static int PyKAdminPrincipal_print(PyKAdminPrincipalObject *self, FILE *file, int flags){
 
     static const char *kPRINT_FORMAT = "%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s";
 
@@ -119,7 +119,7 @@ static int KAdminPrincipal_print(PyKAdminPrincipalObject *self, FILE *file, int 
 
 
 
-static PyMemberDef KAdminPrincipal_members[] = {
+static PyMemberDef PyKAdminPrincipal_members[] = {
   
     {"failed_auth_count",           T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, fail_auth_count),       READONLY, ""},
     {"key_version_number",          T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, kvno),                  READONLY, ""},
@@ -132,7 +132,7 @@ static PyMemberDef KAdminPrincipal_members[] = {
 
 
 
-static PyObject *KAdminPrincipal_set_expire(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
+static PyObject *PyKAdminPrincipal_set_expire(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
     
     kadm5_ret_t retval = KADM5_OK; 
     time_t date        = 0; 
@@ -156,7 +156,7 @@ static PyObject *KAdminPrincipal_set_expire(PyKAdminPrincipalObject *self, PyObj
 }
 
 
-static PyObject *KAdminPrincipal_clear_policy(PyKAdminPrincipalObject *self) {
+static PyObject *PyKAdminPrincipal_clear_policy(PyKAdminPrincipalObject *self) {
     
     kadm5_ret_t retval = KADM5_OK;
 
@@ -167,7 +167,7 @@ static PyObject *KAdminPrincipal_clear_policy(PyKAdminPrincipalObject *self) {
 }
 
 
-static PyObject *KAdminPrincipal_set_policy(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
+static PyObject *PyKAdminPrincipal_set_policy(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
     
     kadm5_ret_t retval = KADM5_OK;
 
@@ -177,7 +177,7 @@ static PyObject *KAdminPrincipal_set_policy(PyKAdminPrincipalObject *self, PyObj
         return NULL;
 
     if (self->entry.policy == NULL) {
-        KAdminPrincipal_clear_policy(self);
+        PyKAdminPrincipal_clear_policy(self);
     } else {
         retval = kadm5_modify_principal(self->kadmin->server_handle, &self->entry, KADM5_POLICY);
         if (retval != KADM5_OK) { PyKAdmin_RaiseKAdminError(retval, "kadm5_modify_principal"); return NULL; }
@@ -198,7 +198,7 @@ static PyObject *PyKAdminPrincipal_reload(PyKAdminPrincipalObject *self) {
     Py_RETURN_TRUE;
 }
 
-static PyObject *KAdminPrincipal_change_password(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
+static PyObject *PyKAdminPrincipal_change_password(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
 
     kadm5_ret_t retval = KADM5_OK; 
     char *password     = NULL;
@@ -212,7 +212,7 @@ static PyObject *KAdminPrincipal_change_password(PyKAdminPrincipalObject *self, 
     Py_RETURN_TRUE;
 }
 
-static PyObject *KAdminPrincipal_randomize_key(PyKAdminPrincipalObject *self) {
+static PyObject *PyKAdminPrincipal_randomize_key(PyKAdminPrincipalObject *self) {
 
     kadm5_ret_t retval = KADM5_OK; 
 
@@ -254,15 +254,15 @@ done:
     return result;
 }
 
-static PyMethodDef KAdminPrincipal_methods[] = {
-    {"cpw",             (PyCFunction)KAdminPrincipal_change_password,   METH_VARARGS, ""},
-    {"change_password", (PyCFunction)KAdminPrincipal_change_password,   METH_VARARGS, ""},
-    {"randkey",         (PyCFunction)KAdminPrincipal_randomize_key,     METH_NOARGS, ""},
-    {"randomize_key",   (PyCFunction)KAdminPrincipal_randomize_key,     METH_NOARGS, ""},
+static PyMethodDef PyKAdminPrincipal_methods[] = {
+    {"cpw",             (PyCFunction)PyKAdminPrincipal_change_password,   METH_VARARGS, ""},
+    {"change_password", (PyCFunction)PyKAdminPrincipal_change_password,   METH_VARARGS, ""},
+    {"randkey",         (PyCFunction)PyKAdminPrincipal_randomize_key,     METH_NOARGS, ""},
+    {"randomize_key",   (PyCFunction)PyKAdminPrincipal_randomize_key,     METH_NOARGS, ""},
     
-    {"expire",          (PyCFunction)KAdminPrincipal_set_expire,        METH_VARARGS, ""},
-    {"set_policy",      (PyCFunction)KAdminPrincipal_set_policy,        METH_VARARGS, ""},
-    {"clear_policy",    (PyCFunction)KAdminPrincipal_clear_policy,      METH_NOARGS, ""},
+    {"expire",          (PyCFunction)PyKAdminPrincipal_set_expire,        METH_VARARGS, ""},
+    {"set_policy",      (PyCFunction)PyKAdminPrincipal_set_policy,        METH_VARARGS, ""},
+    {"clear_policy",    (PyCFunction)PyKAdminPrincipal_clear_policy,      METH_NOARGS, ""},
 
     // TODO
     //{"set_max_renew",    (PyCFunction)NULL,      METH_NOARGS, ""},
@@ -406,7 +406,7 @@ static PyObject *PyKAdminPrincipal_get_max_renewable_life(PyKAdminPrincipalObjec
 
 
 
-static PyGetSetDef KAdminPrincipal_getters_setters[] = {
+static PyGetSetDef PyKAdminPrincipal_getters_setters[] = {
 
     {"principal", (getter)PyKAdminPrincipal_get_principal,  NULL, "Kerberos Principal", NULL},
     {"name",      (getter)PyKAdminPrincipal_get_principal,  NULL, "Kerberos Principal", NULL},
@@ -433,7 +433,7 @@ PyTypeObject PyKAdminPrincipalObject_Type = {
     sizeof(PyKAdminPrincipalObject),             /*tp_basicsize*/
     0,                         /*tp_itemsize*/
     (destructor)PyKAdminPrincipal_dealloc, /*tp_dealloc*/
-    (printfunc)KAdminPrincipal_print,                         /*tp_print*/
+    (printfunc)PyKAdminPrincipal_print,                         /*tp_print*/
     0,                         /*tp_getattr*/
     0,                         /*tp_setattr*/
     0,                         /*tp_compare*/
@@ -455,17 +455,17 @@ PyTypeObject PyKAdminPrincipalObject_Type = {
     0,                     /* tp_weaklistoffset */
     0,                     /* tp_iter */
     0,                     /* tp_iternext */
-    KAdminPrincipal_methods,             /* tp_methods */
-    KAdminPrincipal_members,             /* tp_members */
-    KAdminPrincipal_getters_setters,                         /* tp_getset */
+    PyKAdminPrincipal_methods,             /* tp_methods */
+    PyKAdminPrincipal_members,             /* tp_members */
+    PyKAdminPrincipal_getters_setters,                         /* tp_getset */
     0,                         /* tp_base */
     0,                         /* tp_dict */
     0,                         /* tp_descr_get */
     0,                         /* tp_descr_set */
     0,                         /* tp_dictoffset */
-    (initproc)KAdminPrincipal_init,      /* tp_init */
+    (initproc)PyKAdminPrincipal_init,      /* tp_init */
     0,                         /* tp_alloc */
-    KAdminPrincipal_new,                 /* tp_new */
+    PyKAdminPrincipal_new,                 /* tp_new */
 };
 
 
@@ -477,7 +477,7 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_name(PyKAdminObj
 
     if (client_name) {
 
-        principal = (PyKAdminPrincipalObject *)KAdminPrincipal_new(&PyKAdminPrincipalObject_Type, NULL, NULL);
+        principal = (PyKAdminPrincipalObject *)PyKAdminPrincipal_new(&PyKAdminPrincipalObject_Type, NULL, NULL);
 
         if (principal) {
 
@@ -503,7 +503,7 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_db_entry(PyKAdmi
 
     kadm5_ret_t retval = KADM5_OK;
 
-    PyKAdminPrincipalObject *principal = (PyKAdminPrincipalObject *)KAdminPrincipal_new(&PyKAdminPrincipalObject_Type, NULL, NULL);
+    PyKAdminPrincipalObject *principal = (PyKAdminPrincipalObject *)PyKAdminPrincipal_new(&PyKAdminPrincipalObject_Type, NULL, NULL);
 
     if (kdb) {
 
