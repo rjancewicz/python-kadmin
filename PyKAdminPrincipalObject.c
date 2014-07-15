@@ -305,6 +305,10 @@ static PyMethodDef KAdminPrincipal_methods[] = {
     {"set_policy",      (PyCFunction)KAdminPrincipal_set_policy,        METH_VARARGS, ""},
     {"clear_policy",    (PyCFunction)KAdminPrincipal_clear_policy,      METH_NOARGS, ""},
 
+    // TODO
+    //{"set_max_renew",    (PyCFunction)NULL,      METH_NOARGS, ""},
+    //{"password_expire",    (PyCFunction)NULL,      METH_NOARGS, ""},
+
     {"reload",          (PyCFunction)KAdminPrincipal_reload,            METH_NOARGS, ""},
 
     {NULL, NULL, 0, NULL}
