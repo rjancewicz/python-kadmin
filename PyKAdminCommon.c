@@ -14,7 +14,7 @@ kadm5_get_principal(void *server_handle, krb5_principal principal,
 #include <datetime.h>
 
 
-PyObject *pykadmin_pydatetime_from_timestamp(time_t timestamp) {
+inline PyObject *pykadmin_pydatetime_from_timestamp(time_t timestamp) {
 
     PyDateTime_IMPORT;
 
