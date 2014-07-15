@@ -55,7 +55,7 @@ typedef struct _kadm5_principal_ent_t {
 
 
 
-static void KAdminPrincipal_dealloc(PyKAdminPrincipalObject *self) {
+static void PyKAdminPrincipal_dealloc(PyKAdminPrincipalObject *self) {
     
     kadm5_free_principal_ent(self->kadmin->server_handle, &self->entry);
 
@@ -186,38 +186,7 @@ static PyObject *KAdminPrincipal_set_policy(PyKAdminPrincipalObject *self, PyObj
     Py_RETURN_TRUE;
 }
 
-
-
-static PyObject *_KAdminPrincipal_load_principal(PyKAdminPrincipalObject *self, char *client_name) {
-
-    kadm5_ret_t retval = KADM5_OK;
-    krb5_error_code errno;
-    krb5_principal parsed_name;
-
-    if (client_name) {
-
-        errno = krb5_parse_name(self->kadmin->context, client_name, &parsed_name);
-
-        if (errno) {
-           printf("Failed to parse princ name %d\n", errno);
-        }
-    
-        retval = kadm5_get_principal(self->kadmin->server_handle, parsed_name, &self->entry, KADM5_PRINCIPAL_NORMAL_MASK);
-
-        krb5_free_principal(self->kadmin->context, parsed_name);
-        
-        if (retval != 0x0) { PyKAdmin_RaiseKAdminError(retval, "kadm5_get_principal"); return NULL; }
-
-        Py_RETURN_TRUE;
-    }
-
-    // TODO: raise exception 
-    return NULL;
-    //Py_RETURN_FALSE;
-}
-
-
-static PyObject *KAdminPrincipal_reload(PyKAdminPrincipalObject *self) {
+static PyObject *PyKAdminPrincipal_reload(PyKAdminPrincipalObject *self) {
 
     kadm5_ret_t retval = KADM5_OK; 
 
@@ -299,7 +268,7 @@ static PyMethodDef KAdminPrincipal_methods[] = {
     //{"set_max_renew",    (PyCFunction)NULL,      METH_NOARGS, ""},
     //{"password_expire",    (PyCFunction)NULL,      METH_NOARGS, ""},
 
-    {"reload",          (PyCFunction)KAdminPrincipal_reload,            METH_NOARGS, ""},
+    {"reload",          (PyCFunction)PyKAdminPrincipal_reload,            METH_NOARGS, ""},
 
     {NULL, NULL, 0, NULL}
 };
@@ -463,7 +432,7 @@ PyTypeObject PyKAdminPrincipalObject_Type = {
     "kadmin.Principal",             /*tp_name*/
     sizeof(PyKAdminPrincipalObject),             /*tp_basicsize*/
     0,                         /*tp_itemsize*/
-    (destructor)KAdminPrincipal_dealloc, /*tp_dealloc*/
+    (destructor)PyKAdminPrincipal_dealloc, /*tp_dealloc*/
     (printfunc)KAdminPrincipal_print,                         /*tp_print*/
     0,                         /*tp_getattr*/
     0,                         /*tp_setattr*/
@@ -501,24 +470,30 @@ PyTypeObject PyKAdminPrincipalObject_Type = {
 
 
 PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_name(PyKAdminObject *kadmin, char *client_name) {
+        
+    krb5_error_code errno;
 
-    PyKAdminPrincipalObject *principal = (PyKAdminPrincipalObject *)KAdminPrincipal_new(&PyKAdminPrincipalObject_Type, NULL, NULL);
+    PyKAdminPrincipalObject *principal = (PyKAdminPrincipalObject *)Py_None;
 
-    if (principal) {
+    if (client_name) {
 
-        Py_XINCREF(kadmin);
-        principal->kadmin = kadmin;
+        principal = (PyKAdminPrincipalObject *)KAdminPrincipal_new(&PyKAdminPrincipalObject_Type, NULL, NULL);
 
-        /* todo : fetch kadmin entry */
-        PyObject *result = _KAdminPrincipal_load_principal(principal, client_name);
+        if (principal) {
 
-        if (!result) {
-            //Py_XDECREF(kadmin); // this is redundant as dealloc decrementes the reference for us
-            Py_XINCREF(Py_None);
-            KAdminPrincipal_dealloc(principal);
-            principal = (PyKAdminPrincipalObject *)Py_None;
+            Py_INCREF(kadmin);
+            principal->kadmin = kadmin;
+
+            errno = krb5_parse_name(kadmin->context, client_name, &principal->entry.principal);
+            PyObject *result = PyKAdminPrincipal_reload(principal);
+
+            if (!result || errno) {
+                Py_INCREF(Py_None);
+                PyKAdminPrincipal_dealloc(principal);
+                principal = (PyKAdminPrincipalObject *)Py_None;
+            }
+
         }
-
     }
 
     return principal;
@@ -539,7 +514,7 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_db_entry(PyKAdmi
 
         if (retval) {
 
-            KAdminPrincipal_dealloc(principal);
+            PyKAdminPrincipal_dealloc(principal);
             
             // todo: set exception
             principal = NULL;
@@ -551,7 +526,7 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_db_entry(PyKAdmi
 }
 
 void KAdminPrincipal_destroy(PyKAdminPrincipalObject *self) {
-    KAdminPrincipal_dealloc(self);
+    PyKAdminPrincipal_dealloc(self);
 }
 
 

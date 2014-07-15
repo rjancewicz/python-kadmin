@@ -202,6 +202,9 @@ static PyKAdminIterator *PyKAdminObject_policy_iter(PyKAdminObject *self, PyObje
     return PyKAdminIterator_create(self, mode, match);
 }
 
+
+#ifdef KADMIN_LOCAL
+
 static int kdb_iter_princs(void *data, krb5_db_entry *kdb) {
 
     PyKAdminObject *self = (PyKAdminObject *)data;
@@ -350,6 +353,7 @@ static PyObject *PyKAdminObject_each_policy(PyKAdminObject *self, PyObject *args
     Py_RETURN_TRUE;
 
 }
+#endif
 
 
 static PyMethodDef PyKAdminObject_methods[] = {
