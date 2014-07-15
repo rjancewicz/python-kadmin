@@ -66,7 +66,7 @@ def database_size():
     return stdoutdata.count('\n') - 2
 
 
-class KAdminUnitTests(unittest.TestCase):
+class KAdminUnitTests():
  
     ''' Missing in 2.6 '''
     def assertIsNotNone(self, expr, msg=None):
