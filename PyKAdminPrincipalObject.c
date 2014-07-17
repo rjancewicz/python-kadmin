@@ -386,7 +386,7 @@ static krb5_deltat _decode_timedelta_input(PyObject *timedelta) {
 
     PyDateTime_IMPORT;
 
-    time_t now;
+    time_t now = 0; 
     krb5_deltat delta = TIME_NONE;  
 
     if (timedelta) {
@@ -421,13 +421,11 @@ static krb5_deltat _decode_timedelta_input(PyObject *timedelta) {
 
 }
 
-static krb5_timestamp _decode_datetime_input(PyObject *date) {
+static krb5_timestamp _decode_timestamp_input(PyObject *date) {
 
     PyDateTime_IMPORT;
 
     krb5_timestamp timestamp = TIME_NONE;  
-
-    //static const char *kDATE_NEVER = "never";
 
     if (date) {
 
@@ -461,7 +459,7 @@ static krb5_timestamp _decode_datetime_input(PyObject *date) {
 
 int PyKAdminPrincipal_set_expire(PyKAdminPrincipalObject *self, PyObject *value, void *closure) {
 
-    krb5_timestamp timestamp = _decode_datetime_input(value);
+    krb5_timestamp timestamp = _decode_timestamp_input(value);
 
     if (timestamp == TIME_NONE) {
         return 1; 
@@ -475,7 +473,7 @@ int PyKAdminPrincipal_set_expire(PyKAdminPrincipalObject *self, PyObject *value,
 
 int PyKAdminPrincipal_set_pwexpire(PyKAdminPrincipalObject *self, PyObject *value, void *closure) {
 
-    krb5_timestamp timestamp = _decode_datetime_input(value);
+    krb5_timestamp timestamp = _decode_timestamp_input(value);
 
     if (timestamp == TIME_NONE) {
         return 1; 
@@ -587,23 +585,49 @@ int PyKAdminPrincipal_set_policy(PyKAdminPrincipalObject *self, PyObject *value,
 
 }
 
+/*
+ * Documentation Strings
+ */
+
+static char kDOCSTRING_COMMIT[]          = "commit()\n\tCommit all staged changes to the kerberos database.";
+static char kDOCSTRING_CPW[]             = "change_password(str)\n\tChange the password for the given principal.";
+static char kDOCSTRING_RANDKEY[]         = "randkey()\n\tRandomize the key for the given principal.";
+static char kDOCSTRING_RELOAD[]          = "reload()\n\tReload the local entry from the kerberos database.";
+static char kDOCSTRING_UNLOCK[]          = "unlock()\n\tUnlock the principal.";
+static char kDOCSTRING_SET_FLAGS[]       = "set_flags(KADM5_ATTRIBUTES)\n\tSet attributes to their enabled (1) state.";
+static char kDOCSTRING_UNSET_FLAGS[]     = "unset_flags(KADM5_ATTRIBUTES)\n\tSet attributes to their diabled (0) state.";
+static char kDOCSTRING_NAME[]            = "str\n\tPrincipal name as a string.";
+static char kDOCSTRING_MOD_NAME[]        = "str\n\tThe account which last modified the principal as a string.";
+static char kDOCSTRING_MOD_DATE[]        = "datetime.datetime\n\tThe datetime at which the principal was last modified.";
+static char kDOCSTRING_LAST_PWD_CHANGE[] = "datetime.datetime\n\tThe datetime at which the password was last changed.";
+static char kDOCSTRING_LAST_SUCCESS[]    = "datetime.datetime\n\tThe last successful authentication.";
+static char kDOCSTRING_LAST_FAILURE[]    = "datetime.datetime\n\tThe last failed authentication.";
+static char kDOCSTRING_ATTRIBUTES[]      = "list\n\tlist of all attributes which have been set.";
+static char kDOCSTRING_EXPIRE[]          = "getter: datetime.datetime\n\tsetter: [datetime.date|datetime.datetime|str|None]\n\twhen the account expires.";
+static char kDOCSTRING_PWEXPIRE[]        = "getter: datetime.datetime\n\tsetter: [datetime.date|datetime.datetime|str|None]\n\twhen the current password expires.";
+static char kDOCSTRING_MAXLIFE[]         = "getter: datetime.timedelta\n\tsetter: [datetime.timedelta|str|None]\n\tthe maximum ticket life.";
+static char kDOCSTRING_MAXRENEWLIFE[]    = "getter: datetime.timedelta\n\tsetter: [datetime.timedelta|str|None]\n\tthe maximum renewable life.";
+static char kDOCSTRING_POLICY[]          = "getter: [str|None]\n\tsetter: [str|kadmin.Policy|None]\n\tpolicy enabled for the principal.";
+static char kDOCSTRING_KVNO[]            = "getter: int\n\tsetter: [int]\n\tcurrent key version number.";
+static char kDOCSTRING_FAILURES[]        = "failed authentication count.";
+static char kDOCSTRING_MKVNO[]           = "master key version number.";
 
 static PyMethodDef PyKAdminPrincipal_methods[] = {
 
-    {"cpw",             (PyCFunction)PyKAdminPrincipal_change_password, METH_VARARGS,  "doc string"},
-    {"change_password", (PyCFunction)PyKAdminPrincipal_change_password, METH_VARARGS,  "doc string"},
-    {"randkey",         (PyCFunction)PyKAdminPrincipal_randomize_key,   METH_NOARGS,   "doc string"},
-    {"randomize_key",   (PyCFunction)PyKAdminPrincipal_randomize_key,   METH_NOARGS,   "doc string"},
+    {"cpw",             (PyCFunction)PyKAdminPrincipal_change_password,  METH_VARARGS,  kDOCSTRING_CPW},
+    {"change_password", (PyCFunction)PyKAdminPrincipal_change_password,  METH_VARARGS,  kDOCSTRING_CPW},
+    {"randkey",         (PyCFunction)PyKAdminPrincipal_randomize_key,    METH_NOARGS,   kDOCSTRING_RANDKEY},
+    {"randomize_key",   (PyCFunction)PyKAdminPrincipal_randomize_key,    METH_NOARGS,   kDOCSTRING_RANDKEY},
 
     // TODO: principal.modify(expire=a, pwexpire=b, maxlife=c, maxrenewlife=d, attributes=e, policy=f, kvno=g)
     //{"modify"           (PyCFunction)NULL,                              METH_KEYWORDS, "doc string"}
 
-    {"commit",           (PyCFunction)PyKAdminPrincipal_commit,          METH_NOARGS,   "doc string"},
-    {"reload",           (PyCFunction)PyKAdminPrincipal_reload,          METH_NOARGS,   "doc string"},
-    {"unlock",           (PyCFunction)PyKAdminPrincipal_unlock,          METH_NOARGS,   "doc string"},
+    {"commit",           (PyCFunction)PyKAdminPrincipal_commit,           METH_NOARGS,   kDOCSTRING_COMMIT},
+    {"reload",           (PyCFunction)PyKAdminPrincipal_reload,           METH_NOARGS,   kDOCSTRING_RELOAD},
+    {"unlock",           (PyCFunction)PyKAdminPrincipal_unlock,           METH_NOARGS,   kDOCSTRING_UNLOCK},
 
-    {"set_flags",        (PyCFunction)PyKAdminPrincipal_set_attributes,          METH_NOARGS,   "doc string"},
-    {"unset_flags",      (PyCFunction)PyKAdminPrincipal_unset_attributes, METH_NOARGS,   "doc string"},
+    {"set_flags",        (PyCFunction)PyKAdminPrincipal_set_attributes,   METH_VARARGS,  kDOCSTRING_SET_FLAGS},
+    {"unset_flags",      (PyCFunction)PyKAdminPrincipal_unset_attributes, METH_VARARGS,  kDOCSTRING_UNSET_FLAGS},
     
 
     {NULL, NULL, 0, NULL}
@@ -612,36 +636,37 @@ static PyMethodDef PyKAdminPrincipal_methods[] = {
 
 static PyGetSetDef PyKAdminPrincipal_getters_setters[] = {
 
-    {"principal",       (getter)PyKAdminPrincipal_get_principal,       NULL, "doc string", NULL},
-    {"name",            (getter)PyKAdminPrincipal_get_principal,       NULL, "doc string", NULL},
+    {"principal",       (getter)PyKAdminPrincipal_get_principal,       NULL, kDOCSTRING_NAME, NULL},
+    {"name",            (getter)PyKAdminPrincipal_get_principal,       NULL, kDOCSTRING_NAME, NULL},
 
-    {"mod_name",        (getter)PyKAdminPrincipal_get_mod_name,        NULL, "doc string", NULL},
-    {"mod_date",        (getter)PyKAdminPrincipal_get_mod_date,        NULL, "doc string", NULL},
+    {"mod_name",        (getter)PyKAdminPrincipal_get_mod_name,        NULL, kDOCSTRING_MOD_NAME, NULL},
+    {"mod_date",        (getter)PyKAdminPrincipal_get_mod_date,        NULL, kDOCSTRING_MOD_DATE, NULL},
 
-    {"last_pwd_change", (getter)PyKAdminPrincipal_get_last_pwd_change, NULL, "doc string", NULL},
-    {"last_success",    (getter)PyKAdminPrincipal_get_last_success,    NULL, "doc string", NULL},
-    {"last_failure",    (getter)PyKAdminPrincipal_get_last_failed,     NULL, "doc string", NULL},
+    {"last_pwd_change", (getter)PyKAdminPrincipal_get_last_pwd_change, NULL, kDOCSTRING_LAST_PWD_CHANGE, NULL},
+    {"last_success",    (getter)PyKAdminPrincipal_get_last_success,    NULL, kDOCSTRING_LAST_SUCCESS, NULL},
+    {"last_failure",    (getter)PyKAdminPrincipal_get_last_failed,     NULL, kDOCSTRING_LAST_FAILURE, NULL},
+
+    {"attributes",      (getter)PyKAdminPrincipal_get_attributes,      NULL, kDOCSTRING_ATTRIBUTES, NULL},
+
 
     // setter attributes
 
-    {"expire",       (getter)PyKAdminPrincipal_get_expire,       (setter)PyKAdminPrincipal_set_expire,       "doc string", NULL},
-    {"pwexpire",     (getter)PyKAdminPrincipal_get_pwexpire,     (setter)PyKAdminPrincipal_set_pwexpire,     "doc string", NULL},
+    {"expire",       (getter)PyKAdminPrincipal_get_expire,       (setter)PyKAdminPrincipal_set_expire,       kDOCSTRING_EXPIRE,       NULL},
+    {"pwexpire",     (getter)PyKAdminPrincipal_get_pwexpire,     (setter)PyKAdminPrincipal_set_pwexpire,     kDOCSTRING_PWEXPIRE,     NULL},
 
-    {"maxlife",      (getter)PyKAdminPrincipal_get_maxlife,      (setter)PyKAdminPrincipal_set_maxlife,      "doc string", NULL},
-    {"maxrenewlife", (getter)PyKAdminPrincipal_get_maxrenewlife, (setter)PyKAdminPrincipal_set_maxrenewlife, "doc string", NULL},
-    {"attributes",   (getter)PyKAdminPrincipal_get_attributes,   (setter)PyKAdminPrincipal_set_attributes,   "doc string", NULL},
+    {"maxlife",      (getter)PyKAdminPrincipal_get_maxlife,      (setter)PyKAdminPrincipal_set_maxlife,      kDOCSTRING_MAXLIFE,      NULL},
+    {"maxrenewlife", (getter)PyKAdminPrincipal_get_maxrenewlife, (setter)PyKAdminPrincipal_set_maxrenewlife, kDOCSTRING_MAXRENEWLIFE, NULL},
   
-    {"policy",       (getter)PyKAdminPrincipal_get_policy,       (setter)PyKAdminPrincipal_set_policy,       "doc string", NULL},
-    {"kvno",         (getter)PyKAdminPrincipal_get_kvno,         (setter)PyKAdminPrincipal_set_kvno,         "doc string", NULL},
+    {"policy",       (getter)PyKAdminPrincipal_get_policy,       (setter)PyKAdminPrincipal_set_policy,       kDOCSTRING_POLICY,       NULL},
+    {"kvno",         (getter)PyKAdminPrincipal_get_kvno,         (setter)PyKAdminPrincipal_set_kvno,         kDOCSTRING_KVNO,         NULL},
 
     {NULL, NULL, NULL, NULL, NULL}
 };
 
-
 static PyMemberDef PyKAdminPrincipal_members[] = {
   
-    {"failures",   T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, fail_auth_count), READONLY, "doc string"},
-    {"mkvno",      T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, mkvno),           READONLY, "doc string"},
+    {"failures",   T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, fail_auth_count), READONLY, kDOCSTRING_FAILURES},
+    {"mkvno",      T_INT, offsetof(PyKAdminPrincipalObject, entry) + offsetof(kadm5_principal_ent_rec, mkvno),           READONLY, kDOCSTRING_MKVNO},
 
     {NULL}
 };
