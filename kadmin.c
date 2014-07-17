@@ -1,18 +1,12 @@
 
-
-#include <Python.h>
-#include <kadm5/admin.h>
-#include <krb5/krb5.h>
-#include <kdb.h>
-#include <stdio.h>
-#include <string.h>
-#include <structmember.h>
+#include "pykadmin.h"
 
 #include "PyKAdminObject.h"
 #include "PyKAdminErrors.h"
 #include "PyKAdminIterator.h"
 #include "PyKAdminPrincipalObject.h"
 #include "PyKAdminPolicyObject.h"
+
 
 #ifdef KADMIN_LOCAL
 static PyKAdminObject *_kadmin_local(PyObject *self, PyObject *args); 
@@ -40,28 +34,6 @@ static struct PyMethodDef module_methods[] = {
 
     {NULL, NULL, 0, NULL}
 };
-
-/*
-#define KRB5_KDB_DISALLOW_POSTDATED     0x00000001
-#define KRB5_KDB_DISALLOW_FORWARDABLE   0x00000002
-#define KRB5_KDB_DISALLOW_TGT_BASED     0x00000004
-#define KRB5_KDB_DISALLOW_RENEWABLE     0x00000008
-#define KRB5_KDB_DISALLOW_PROXIABLE     0x00000010
-#define KRB5_KDB_DISALLOW_DUP_SKEY      0x00000020
-#define KRB5_KDB_DISALLOW_ALL_TIX       0x00000040
-#define KRB5_KDB_REQUIRES_PRE_AUTH      0x00000080
-#define KRB5_KDB_REQUIRES_HW_AUTH       0x00000100
-#define KRB5_KDB_REQUIRES_PWCHANGE      0x00000200
-#define KRB5_KDB_DISALLOW_SVR           0x00001000
-#define KRB5_KDB_PWCHANGE_SERVICE       0x00002000
-#define KRB5_KDB_SUPPORT_DESMD5         0x00004000
-#define KRB5_KDB_NEW_PRINC              0x00008000
-#define KRB5_KDB_OK_AS_DELEGATE         0x00100000
-#define KRB5_KDB_OK_TO_AUTH_AS_DELEGATE 0x00200000 
-#define KRB5_KDB_NO_AUTH_DATA_REQUIRED  0x00400000
-
-
-*/
 
 void PyKAdminConstant_init(PyObject *module) {
 
@@ -104,26 +76,45 @@ PyMODINIT_FUNC
     Py_XINCREF(&PyKAdminObject_Type);
     Py_XINCREF(&PyKAdminPrincipalObject_Type);
 
-    #ifdef KADMIN_LOCAL
-    PyObject *module = Py_InitModule3("kadmin_local", module_methods, module_docstring);
-    #else
-    PyObject *module = Py_InitModule3("kadmin", module_methods, module_docstring);
-    #endif
+    PyObject *module = Py_InitModule3(kMODULE_NAME, module_methods, module_docstring);
 
     if (!module) 
         return;
 
-    #ifdef KADMIN_LOCAL
-    KAdminError = PyErr_NewException("kadmin_local.KAdminError", NULL, NULL);
-    #else
-    KAdminError = PyErr_NewException("kadmin.KAdminError", NULL, NULL);
-    #endif
+    /* 
+        Initialize Error Classes
 
-    Py_XINCREF(KAdminError);
+        kadmin.KAdminError(exceptions.Exception)
+            AdminErrors
+                ... All kadm5_ret_t Errors
+            KerberosErrors
+                ... All krb5_error_code Errors
 
-    PyModule_AddObject(module, "KAdminError", KAdminError);
+    */
+                
+    PyKAdminError_base = PyErr_NewException(kBASE_ERROR_NAME, NULL, NULL);
 
-    PyKAdminError_init(module); 
+    if (PyKAdminError_base) {
+
+        Py_INCREF(PyKAdminError_base);
+        PyModule_AddObject(module, "KAdminError", PyKAdminError_base);
+
+        PyKAdminError_kadm = PyErr_NewException(kKADM_ERROR_NAME, PyKAdminError_base, NULL);
+        PyKAdminError_krb5 = PyErr_NewException(kKRB5_ERROR_NAME, PyKAdminError_base, NULL);
+
+        if (PyKAdminError_kadm) {
+            Py_INCREF(PyKAdminError_kadm);
+            PyModule_AddObject(module, "AdminError", PyKAdminError_kadm);
+            PyKAdminError_init_kadm(module);
+        }
+
+         if (PyKAdminError_krb5) {
+            Py_INCREF(PyKAdminError_krb5);
+            PyModule_AddObject(module, "KerberosError", PyKAdminError_krb5);
+            PyKAdminError_init_krb5(module);
+        }
+    }
+
     PyKAdminConstant_init(module);
 
 }
@@ -158,7 +149,7 @@ static PyKAdminObject *_kadmin_local(PyObject *self, PyObject *args) {
                 db_args, 
                 &kadmin->server_handle);
 
-    if (retval) { PyKAdmin_RaiseKAdminError(retval, "kadm5_init_with_password"); return NULL; }
+    if (retval) { PyKAdminError_raise_kadm_error(retval, "kadm5_init_with_password"); return NULL; }
 
     return kadmin;
 
@@ -188,18 +179,18 @@ static PyKAdminObject *_kadmin_init_with_ccache(PyObject *self, PyObject *args) 
 
     if (ccache_name == NULL) {
         retval = krb5_cc_default(kadmin->context, &cc);
-        if (retval) { PyKAdmin_RaiseKAdminError(retval, "krb5_cc_default"); return NULL; }
+        if (retval) { PyKAdminError_raise_kadm_error(retval, "krb5_cc_default"); return NULL; }
     } else {
         retval = krb5_cc_resolve(kadmin->context, ccache_name, &cc);
-        if (retval) { PyKAdmin_RaiseKAdminError(retval, "krb5_cc_resolve"); return NULL; }
+        if (retval) { PyKAdminError_raise_kadm_error(retval, "krb5_cc_resolve"); return NULL; }
     } 
 
     if (client_name == NULL) {
         retval = krb5_cc_get_principal(kadmin->context, cc, &princ);
-        if (retval) { PyKAdmin_RaiseKAdminError(retval, "krb5_cc_get_principal"); return NULL; }
+        if (retval) { PyKAdminError_raise_kadm_error(retval, "krb5_cc_get_principal"); return NULL; }
 
         retval = krb5_unparse_name(kadmin->context, princ, &client_name);
-        if (retval) { PyKAdmin_RaiseKAdminError(retval, "krb5_unparse_name"); return NULL; }
+        if (retval) { PyKAdminError_raise_kadm_error(retval, "krb5_unparse_name"); return NULL; }
 
         krb5_free_principal(kadmin->context, princ);
     }
@@ -215,7 +206,7 @@ static PyKAdminObject *_kadmin_init_with_ccache(PyObject *self, PyObject *args) 
                 db_args, 
                 &kadmin->server_handle);
 
-    if (retval) { PyKAdmin_RaiseKAdminError(retval, "kadm5_init_with_creds"); return NULL; }
+    if (retval) { PyKAdminError_raise_kadm_error(retval, "kadm5_init_with_creds"); return NULL; }
 
     Py_XINCREF(kadmin);
     return kadmin;
@@ -246,10 +237,10 @@ static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) 
     if (client_name == NULL) {
         
         retval = krb5_sname_to_principal(kadmin->context, NULL, "host", KRB5_NT_SRV_HST, &princ);
-        if (retval) { PyKAdmin_RaiseKAdminError(retval, "krb5_sname_to_principal"); return NULL; }
+        if (retval) { PyKAdminError_raise_kadm_error(retval, "krb5_sname_to_principal"); return NULL; }
         
         retval = krb5_unparse_name(kadmin->context, princ, &client_name);
-        if (retval) { PyKAdmin_RaiseKAdminError(retval, "krb5_unparse_name"); return NULL; }
+        if (retval) { PyKAdminError_raise_kadm_error(retval, "krb5_unparse_name"); return NULL; }
 
         krb5_free_principal(kadmin->context, princ);
     }
@@ -267,7 +258,7 @@ static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) 
                 db_args, 
                 &kadmin->server_handle);
 
-    if (retval) { PyKAdmin_RaiseKAdminError(retval, "kadm5_init_with_skey"); return NULL; }
+    if (retval) { PyKAdminError_raise_kadm_error(retval, "kadm5_init_with_skey"); return NULL; }
 
 
    // kadmin->context = kadmin->server_handle->context;
@@ -278,7 +269,7 @@ static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) 
    //     printf("retval [%d] %s\n", retval, krb5_get_error_message(kadmin->context, retval));
    // 
     //}
-    //if (retval) { PyKAdmin_RaiseKAdminError(retval, "kadm5_init_with_skey"); return NULL; }
+    //if (retval) { PyKAdminError_raise_kadm_error(retval, "kadm5_init_with_skey"); return NULL; }
 
 
     Py_XINCREF(kadmin);
@@ -311,7 +302,7 @@ static PyKAdminObject *_kadmin_init_with_password(PyObject *self, PyObject *args
                 db_args, 
                 &kadmin->server_handle);
     
-    if (retval) { PyKAdmin_RaiseKAdminError(retval, "kadm5_init_with_password"); return NULL; }
+    if (retval) { PyKAdminError_raise_kadm_error(retval, "kadm5_init_with_password"); return NULL; }
 
     Py_XINCREF(kadmin);
     return kadmin;
