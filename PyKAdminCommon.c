@@ -11,6 +11,91 @@ kadm5_get_principal(void *server_handle, krb5_principal principal,
 	*/
 
 #include "PyKAdminCommon.h"
+#include <datetime.h>
+
+#define TIME_NONE ((time_t) -1)
+
+int pykadmin_policy_exists(void *server_handle, char *name) {
+
+    kadm5_ret_t retval = KADM5_OK;
+    kadm5_policy_ent_rec *policy = NULL; 
+
+    retval = kadm5_get_policy(server_handle, name, policy);
+    if (retval == KADM5_OK)
+        kadm5_free_policy_ent(server_handle, policy);
+
+    return (retval == KADM5_OK);
+}
+
+
+inline PyObject *pykadmin_pydatetime_from_timestamp(time_t timestamp) {
+
+    PyDateTime_IMPORT;
+
+    if (timestamp) {
+        PyObject *datetime = NULL;
+        PyObject *args     = NULL;
+
+        args = Py_BuildValue("(i)", timestamp);
+
+        if (args) {
+            datetime = PyDateTime_FromTimestamp(args);
+            Py_DECREF(args);
+        }
+
+        if (!datetime)
+            PyErr_SetString(PyExc_AttributeError, NULL);
+
+        return datetime;
+    } else {
+        Py_RETURN_NONE;
+    }
+}
+
+int pykadmin_timestamp_from_pydatetime(PyObject *datetime) {
+    
+    PyDateTime_IMPORT;
+
+    time_t timestamp = 0; 
+    struct tm *timeinfo; 
+
+    if (datetime) {
+
+        timeinfo = localtime ( &timestamp );
+
+        timeinfo->tm_year = PyDateTime_GET_YEAR(datetime) - 1900;
+        timeinfo->tm_mon  = PyDateTime_GET_MONTH(datetime) - 1;
+        timeinfo->tm_mday = PyDateTime_GET_DAY(datetime);
+
+        if (PyDateTime_Check(datetime)) {
+            timeinfo->tm_hour = PyDateTime_DATE_GET_HOUR(datetime) - 1 ;
+            timeinfo->tm_min  = PyDateTime_DATE_GET_MINUTE(datetime);
+            timeinfo->tm_sec  = PyDateTime_DATE_GET_SECOND(datetime);
+        }
+
+        timestamp = mktime(timeinfo);
+    } else {
+        timestamp = TIME_NONE;
+    }
+
+    return timestamp;
+}
+
+int pykadmin_seconds_from_pydatetime(PyObject *delta) {
+    
+    PyDateTime_IMPORT;
+
+    time_t seconds = 0; 
+
+    if (delta) {
+        seconds += PyDateTime_DELTA_GET_SECONDS(delta);
+        seconds += PyDateTime_DELTA_GET_DAYS(delta) * 24 * 3600;
+    }
+
+    return seconds;
+
+}
+
 
 krb5_error_code pykadmin_unpack_xdr_osa_princ_ent_rec(PyKAdminObject *kadmin, krb5_db_entry *kdb, osa_princ_ent_rec *adb) {
 
@@ -100,7 +185,6 @@ static krb5_tl_data *dup_tl_data(krb5_tl_data *tl)
     n->tl_data_next = NULL;
     return n;
 }
-
 
 krb5_error_code pykadmin_kadm_from_kdb(PyKAdminObject *kadmin, krb5_db_entry *kdb, kadm5_principal_ent_rec *entry, long mask) {
 
@@ -265,6 +349,68 @@ done:
 }
 
 
+
+/*
+typedef struct _kadm5_policy_ent_t {
+    char            *policy;
+    long            pw_min_life;
+    long            pw_max_life;
+    long            ;
+    long            ;
+    long            ;
+    long            ;
+
+    // version 3 fields 
+    int32 krb5_kvno       pw_max_fail;
+    int32 krb5_deltat     pw_failcnt_interval;
+    int32 krb5_deltat     pw_lockout_duration;
+} kadm5_policy_ent_rec, *kadm5_policy_ent_t;
+
+typedef struct _osa_policy_ent_t {
+    int               version;
+    char      *name;
+    krb5_ui_4       pw_min_life;
+    krb5_ui_4       pw_max_life;
+    krb5_ui_4       pw_min_length;
+    krb5_ui_4       pw_min_classes;
+    krb5_ui_4       pw_history_num;
+    krb5_ui_4       policy_refcnt;
+
+    // Only valid if version > 1 
+    krb5_ui_4       pw_max_fail;                // pwdMaxFailure 
+    krb5_ui_4       pw_failcnt_interval;        // pwdFailureCountInterval 
+    krb5_ui_4       pw_lockout_duration;        // pwdLockoutDuration 
+} osa_policy_ent_rec, *osa_policy_ent_t;
+
+
+*/
+
+
+krb5_error_code pykadmin_policy_kadm_from_osa(krb5_context ctx, osa_policy_ent_rec *osa, kadm5_policy_ent_rec *entry, long mask) {
+
+    krb5_error_code retval = 0; 
+
+    memset(entry, 0, sizeof(kadm5_policy_ent_rec));
+
+    entry->policy = strdup(osa->name);
+    entry->pw_min_life = osa->pw_min_life;
+    entry->pw_max_life = osa->pw_max_life;
+    entry->pw_min_length = osa->pw_min_length;
+    entry->pw_min_classes = osa->pw_min_classes;
+    entry->pw_history_num = osa->pw_history_num;
+    entry->policy_refcnt = osa->policy_refcnt;
+
+    if (osa->version > 1) {
+        entry->pw_max_fail = osa->pw_max_fail;
+        entry->pw_failcnt_interval = osa->pw_failcnt_interval;
+        entry->pw_lockout_duration = osa->pw_lockout_duration;
+    }
+
+    return retval;
+}
+
+
+
 int pykadmin_compare_tl_data(krb5_context ctx, krb5_tl_data *a, krb5_tl_data *b) {
 
     int result = 1; 
@@ -354,6 +500,24 @@ int pykadmin_principal_ent_rec_compare(krb5_context ctx, kadm5_principal_ent_rec
     return result; 
 }
 
+int pykadmin_policy_ent_rec_compare(krb5_context ctx, kadm5_policy_ent_rec *a, kadm5_policy_ent_rec *b) {
+
+    int result = 1; 
+
+    result &= (strcmp(a->policy, b->policy) == 0);
+
+    result &= (a->pw_min_life == b->pw_min_life);
+    result &= (a->pw_max_life == b->pw_max_life);
+    result &= (a->pw_min_length == b->pw_min_length);
+    result &= (a->pw_min_classes == b->pw_min_classes);
+    result &= (a->pw_history_num == b->pw_history_num);
+    result &= (a->policy_refcnt == b->policy_refcnt);
+    result &= (a->pw_max_fail == b->pw_max_fail);
+    result &= (a->pw_failcnt_interval == b->pw_failcnt_interval);
+    result &= (a->pw_lockout_duration == b->pw_lockout_duration);
+
+    return result;
+}
 
 /*
 krb5_error_code pykadmin_copy_kadm_ent_rec(PyKAdminObject *kadmin, kadm5_principal_ent_rec *src, kadm5_principal_ent_rec *dst) {

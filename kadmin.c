@@ -41,6 +41,52 @@ static struct PyMethodDef module_methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
+/*
+#define KRB5_KDB_DISALLOW_POSTDATED     0x00000001
+#define KRB5_KDB_DISALLOW_FORWARDABLE   0x00000002
+#define KRB5_KDB_DISALLOW_TGT_BASED     0x00000004
+#define KRB5_KDB_DISALLOW_RENEWABLE     0x00000008
+#define KRB5_KDB_DISALLOW_PROXIABLE     0x00000010
+#define KRB5_KDB_DISALLOW_DUP_SKEY      0x00000020
+#define KRB5_KDB_DISALLOW_ALL_TIX       0x00000040
+#define KRB5_KDB_REQUIRES_PRE_AUTH      0x00000080
+#define KRB5_KDB_REQUIRES_HW_AUTH       0x00000100
+#define KRB5_KDB_REQUIRES_PWCHANGE      0x00000200
+#define KRB5_KDB_DISALLOW_SVR           0x00001000
+#define KRB5_KDB_PWCHANGE_SERVICE       0x00002000
+#define KRB5_KDB_SUPPORT_DESMD5         0x00004000
+#define KRB5_KDB_NEW_PRINC              0x00008000
+#define KRB5_KDB_OK_AS_DELEGATE         0x00100000
+#define KRB5_KDB_OK_TO_AUTH_AS_DELEGATE 0x00200000 
+#define KRB5_KDB_NO_AUTH_DATA_REQUIRED  0x00400000
+
+
+*/
+
+void PyKAdminConstant_init(PyObject *module) {
+
+    PyModule_AddIntConstant(module, "DISALLOW_POSTDATED",     KRB5_KDB_DISALLOW_POSTDATED);
+    PyModule_AddIntConstant(module, "DISALLOW_FORWARDABLE",   KRB5_KDB_DISALLOW_FORWARDABLE);
+    PyModule_AddIntConstant(module, "DISALLOW_TGT_BASED",     KRB5_KDB_DISALLOW_TGT_BASED);
+    PyModule_AddIntConstant(module, "DISALLOW_RENEWABLE",     KRB5_KDB_DISALLOW_RENEWABLE);
+    PyModule_AddIntConstant(module, "DISALLOW_PROXIABLE",     KRB5_KDB_DISALLOW_PROXIABLE);
+    PyModule_AddIntConstant(module, "DISALLOW_DUP_SKEY",      KRB5_KDB_DISALLOW_DUP_SKEY);
+    PyModule_AddIntConstant(module, "DISALLOW_ALL_TIX",       KRB5_KDB_DISALLOW_ALL_TIX);
+    PyModule_AddIntConstant(module, "REQUIRES_PRE_AUTH",      KRB5_KDB_REQUIRES_PRE_AUTH);
+    PyModule_AddIntConstant(module, "REQUIRES_HW_AUTH",       KRB5_KDB_REQUIRES_HW_AUTH);
+    PyModule_AddIntConstant(module, "REQUIRES_PWCHANGE",      KRB5_KDB_REQUIRES_PWCHANGE);
+    PyModule_AddIntConstant(module, "DISALLOW_SVR",           KRB5_KDB_DISALLOW_SVR);
+    PyModule_AddIntConstant(module, "PWCHANGE_SERVICE",       KRB5_KDB_PWCHANGE_SERVICE);
+    PyModule_AddIntConstant(module, "SUPPORT_DESMD5",         KRB5_KDB_SUPPORT_DESMD5);
+    PyModule_AddIntConstant(module, "NEW_PRINC",              KRB5_KDB_NEW_PRINC);
+    PyModule_AddIntConstant(module, "OK_AS_DELEGATE",         KRB5_KDB_OK_AS_DELEGATE);
+    PyModule_AddIntConstant(module, "OK_TO_AUTH_AS_DELEGATE", KRB5_KDB_OK_TO_AUTH_AS_DELEGATE);
+    PyModule_AddIntConstant(module, "NO_AUTH_DATA_REQUIRED",  KRB5_KDB_NO_AUTH_DATA_REQUIRED);
+    
+}
+
+
+
 PyMODINIT_FUNC 
 #ifdef KADMIN_LOCAL
     initkadmin_local(void) 
@@ -78,6 +124,7 @@ PyMODINIT_FUNC
     PyModule_AddObject(module, "KAdminError", KAdminError);
 
     PyKAdminError_init(module); 
+    PyKAdminConstant_init(module);
 
 }
 

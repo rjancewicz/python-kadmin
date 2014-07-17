@@ -3,12 +3,12 @@
 
 void PyKAdminError_insert(PyObject *module, kadm5_ret_t retval, char *error_name, char *error_string) {
     
-    PyObject *error_number        = PyLong_FromUnsignedLong(retval);
-    PyObject *exception     = NULL;
-    PyObject *error_tuple   = NULL;
-    uint32_t length         = strlen(error_name) + 0xF;
+    PyObject *error_number = PyLong_FromUnsignedLong(retval);
+    PyObject *exception    = NULL;
+    PyObject *error_tuple  = NULL;
+    uint32_t length        = strlen(error_name) + 0xF;
    
-    char *real_name         = malloc(length); 
+    char *real_name        = malloc(length); 
 
     snprintf(real_name, length, "kadmin.%s", error_name);
 

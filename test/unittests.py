@@ -86,6 +86,8 @@ class KAdminUnitTests(unittest.TestCase):
       
         self.kadm = kadm
 
+        self.logger = logging.getLogger('python-kadmin')
+    
     def test_init_with_keytab(self):
         
         try:    
@@ -184,7 +186,7 @@ class KAdminUnitTests(unittest.TestCase):
         account = TEST_ACCOUNTS[0]
 
         self.assertRaises(kadmin.KAdminError, kadm.delprinc, account)
-
+    
     def test_iteration(self):
 
         kadm = self.kadm
@@ -196,7 +198,7 @@ class KAdminUnitTests(unittest.TestCase):
       
         self.assertEqual(count, size)
 
-        
+    
     def test_not_exists(self):
         
         kadm = self.kadm
@@ -239,11 +241,12 @@ class KAdminUnitTests(unittest.TestCase):
         b = kadm.getprinc(account)
 
         self.assertNotEqual(a, b)
-
+    
 
 
 class KAdminLocalUnitTests(unittest.TestCase):
- 
+#class KAdminLocalUnitTests():
+
     ''' Missing in 2.6 '''
     def assertIsNotNone(self, expr, msg=None):
         self.assertFalse((expr is None), msg)
@@ -261,6 +264,8 @@ class KAdminLocalUnitTests(unittest.TestCase):
             self.stop()
       
         self.kadm = kadm
+
+        self.logger = logging.getLogger('python-kadmin')
     
     
     def test_local(self):
@@ -388,12 +393,22 @@ class KAdminLocalUnitTests(unittest.TestCase):
         kadm = self.kadm
         count = [0]
 
+        delta = 0
+
         size = database_size()
+
+        start = time.time()
 
         def fxn(princ, data):
             data[0] += 1
 
         kadm.each_principal(fxn, count)
+
+        end = time.time()
+
+        delta = end - start
+
+        self.logger.info("each iteration {0} principals in {1} seconds. [{2} principals/second]".format(count[0], delta, (count[0]/delta)))
 
         self.assertEqual(count[0], size)
 
