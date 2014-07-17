@@ -80,40 +80,8 @@ PyMODINIT_FUNC
 
     if (!module) 
         return;
-
-    /* 
-        Initialize Error Classes
-
-        kadmin.KAdminError(exceptions.Exception)
-            AdminErrors
-                ... All kadm5_ret_t Errors
-            KerberosErrors
-                ... All krb5_error_code Errors
-
-    */
                 
-    PyKAdminError_base = PyErr_NewException(kBASE_ERROR_NAME, NULL, NULL);
-
-    if (PyKAdminError_base) {
-
-        Py_INCREF(PyKAdminError_base);
-        PyModule_AddObject(module, "KAdminError", PyKAdminError_base);
-
-        PyKAdminError_kadm = PyErr_NewException(kKADM_ERROR_NAME, PyKAdminError_base, NULL);
-        PyKAdminError_krb5 = PyErr_NewException(kKRB5_ERROR_NAME, PyKAdminError_base, NULL);
-
-        if (PyKAdminError_kadm) {
-            Py_INCREF(PyKAdminError_kadm);
-            PyModule_AddObject(module, "AdminError", PyKAdminError_kadm);
-            PyKAdminError_init_kadm(module);
-        }
-
-         if (PyKAdminError_krb5) {
-            Py_INCREF(PyKAdminError_krb5);
-            PyModule_AddObject(module, "KerberosError", PyKAdminError_krb5);
-            PyKAdminError_init_krb5(module);
-        }
-    }
+    PyKAdminError_init(module);
 
     PyKAdminConstant_init(module);
 
