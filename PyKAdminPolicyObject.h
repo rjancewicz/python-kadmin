@@ -10,7 +10,7 @@
 #include <string.h>
 #include <structmember.h>
 
-#include "PyKadminCommon.h"
+#include "PyKAdminCommon.h"
 
 extern time_t get_date(char *);
 
@@ -22,7 +22,10 @@ typedef struct {
 
 PyTypeObject PyKAdminPolicyObject_Type;
 
-#define PyKAdminPolicy_Check(policy) PyObject_TypeCheck(policy, &PyKAdminPolicyObject_Type)
+//#define PyKAdminPolicy_Check(policy) PyObject_TypeCheck(policy, &PyKAdminPolicyObject_Type)
+#define PyKAdminPolicyObject_CheckExact(obj) (Py_TYPE(obj) == &PyKAdminPolicyObject_Type)
+
+char *PyKAdminPolicyObject_policy_name(PyKAdminPolicyObject *self);
 
 PyKAdminPolicyObject *PyKAdminPolicyObject_policy_with_name(PyKAdminObject *kadmin, char *name);
 PyKAdminPolicyObject *PyKAdminPolicyObject_policy_with_osa_entry(PyKAdminObject *kadmin, osa_policy_ent_rec *entry);

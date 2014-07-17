@@ -103,6 +103,16 @@ PyObject *PyKAdminPolicy_RichCompare(PyObject *o1, PyObject *o2, int opid) {
     return result;
 }
 
+char *PyKAdminPolicyObject_policy_name(PyKAdminPolicyObject *self) {
+
+    char *name = NULL;
+
+    if (self)
+        name = self->entry.policy;
+
+    return name;
+}
+
 PyTypeObject PyKAdminPolicyObject_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
 //    0,                         /*ob_size*/

@@ -13,6 +13,20 @@ kadm5_get_principal(void *server_handle, krb5_principal principal,
 #include "PyKAdminCommon.h"
 #include <datetime.h>
 
+#define TIME_NONE ((time_t) -1)
+
+int pykadmin_policy_exists(void *server_handle, char *name) {
+
+    kadm5_ret_t retval = KADM5_OK;
+    kadm5_policy_ent_rec *policy = NULL; 
+
+    retval = kadm5_get_policy(server_handle, name, policy);
+    if (retval == KADM5_OK)
+        kadm5_free_policy_ent(server_handle, policy);
+
+    return (retval == KADM5_OK);
+}
+
 
 inline PyObject *pykadmin_pydatetime_from_timestamp(time_t timestamp) {
 
@@ -29,11 +43,59 @@ inline PyObject *pykadmin_pydatetime_from_timestamp(time_t timestamp) {
             Py_DECREF(args);
         }
 
+        if (!datetime)
+            PyErr_SetString(PyExc_AttributeError, NULL);
+
         return datetime;
     } else {
         Py_RETURN_NONE;
     }
 }
+
+int pykadmin_timestamp_from_pydatetime(PyObject *datetime) {
+    
+    PyDateTime_IMPORT;
+
+    time_t timestamp = 0; 
+    struct tm *timeinfo; 
+
+    if (datetime) {
+
+        timeinfo = localtime ( &timestamp );
+
+        timeinfo->tm_year = PyDateTime_GET_YEAR(datetime) - 1900;
+        timeinfo->tm_mon  = PyDateTime_GET_MONTH(datetime) - 1;
+        timeinfo->tm_mday = PyDateTime_GET_DAY(datetime);
+
+        if (PyDateTime_Check(datetime)) {
+            timeinfo->tm_hour = PyDateTime_DATE_GET_HOUR(datetime) - 1 ;
+            timeinfo->tm_min  = PyDateTime_DATE_GET_MINUTE(datetime);
+            timeinfo->tm_sec  = PyDateTime_DATE_GET_SECOND(datetime);
+        }
+
+        timestamp = mktime(timeinfo);
+    } else {
+        timestamp = TIME_NONE;
+    }
+
+    return timestamp;
+}
+
+int pykadmin_seconds_from_pydatetime(PyObject *delta) {
+    
+    PyDateTime_IMPORT;
+
+    time_t seconds = 0; 
+
+    if (delta) {
+        seconds += PyDateTime_DELTA_GET_SECONDS(delta);
+        seconds += PyDateTime_DELTA_GET_DAYS(delta) * 24 * 3600;
+    }
+
+    return seconds;
+
+}
+
 
 krb5_error_code pykadmin_unpack_xdr_osa_princ_ent_rec(PyKAdminObject *kadmin, krb5_db_entry *kdb, osa_princ_ent_rec *adb) {
 

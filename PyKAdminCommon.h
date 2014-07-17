@@ -12,8 +12,19 @@
 #include "PyKAdminXDR.h"
 #include "PyKAdminObject.h"
 
-inline PyObject *pykadmin_pydatetime_from_timestamp(time_t timestamp);
 
+#ifndef PYTHON3
+#define PyDateTime_DELTA_GET_DAYS(o)         (((PyDateTime_Delta*)o)->days)
+#define PyDateTime_DELTA_GET_SECONDS(o)      (((PyDateTime_Delta*)o)->seconds)
+#define PyDateTime_DELTA_GET_MICROSECONDS(o) (((PyDateTime_Delta*)o)->microseconds)
+#endif
+
+int pykadmin_policy_exists(void *server_handle, char *name);
+
+inline PyObject *pykadmin_pydatetime_from_timestamp(time_t timestamp);
+int pykadmin_timestamp_from_pydatetime(PyObject *datetime);
+
+int pykadmin_seconds_from_pydatetime(PyObject *delta);
 
 krb5_error_code pykadmin_kadm_from_kdb(PyKAdminObject *kadmin, krb5_db_entry *kdb, kadm5_principal_ent_rec *entry, long mask); 
 
