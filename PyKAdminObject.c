@@ -47,7 +47,7 @@ static PyObject *PyKAdminObject_new(PyTypeObject *type, PyObject *args, PyObject
 
         if (retval) {
             Py_DECREF(self);
-            PyKAdmin_RaiseKAdminError(retval, "kadm5_init_with_password");
+            PyKAdminError_raise_kadm_error(retval, "kadm5_init_with_password");
             return NULL;
         }
 
@@ -87,10 +87,10 @@ static PyObject *PyKAdminObject_delete_principal(PyKAdminObject *self, PyObject 
     if (self->server_handle) {
 
         retval = krb5_parse_name(self->context, client_name, &princ);
-        if (retval != 0x0) { PyKAdmin_RaiseKAdminError(retval, "krb5_parse_name"); return NULL; }
+        if (retval != 0x0) { PyKAdminError_raise_kadm_error(retval, "krb5_parse_name"); return NULL; }
 
         retval = kadm5_delete_principal(self->server_handle, princ);
-        if (retval != 0x0) { PyKAdmin_RaiseKAdminError(retval, "kadm5_delete_principal"); return NULL; }
+        if (retval != 0x0) { PyKAdminError_raise_kadm_error(retval, "kadm5_delete_principal"); return NULL; }
 
     }
     
@@ -130,7 +130,7 @@ static PyObject *PyKAdminObject_create_principal(PyKAdminObject *self, PyObject 
 
             retval = kadm5_create_principal(self->server_handle, &entry, KADM5_PRINCIPAL, princ_pass); 
             
-            if (retval != 0x0) { PyKAdmin_RaiseKAdminError(retval, "kadm5_create_principal"); return NULL; }
+            if (retval != 0x0) { PyKAdminError_raise_kadm_error(retval, "kadm5_create_principal"); return NULL; }
         }
     }
 

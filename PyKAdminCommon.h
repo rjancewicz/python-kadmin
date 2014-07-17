@@ -12,7 +12,6 @@
 #include "PyKAdminXDR.h"
 #include "PyKAdminObject.h"
 
-
 #ifndef PYTHON3
 #define PyDateTime_DELTA_GET_DAYS(o)         (((PyDateTime_Delta*)o)->days)
 #define PyDateTime_DELTA_GET_SECONDS(o)      (((PyDateTime_Delta*)o)->seconds)
