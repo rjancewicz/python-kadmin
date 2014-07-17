@@ -32,7 +32,7 @@ static const unsigned int kFLAG_MAX =
 
 
 static void PyKAdminPrincipal_dealloc(PyKAdminPrincipalObject *self) {
-    
+   
     kadm5_free_principal_ent(self->kadmin->server_handle, &self->entry);
 
     Py_XDECREF(self->kadmin);
@@ -719,8 +719,10 @@ PyTypeObject PyKAdminPrincipalObject_Type = {
 PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_name(PyKAdminObject *kadmin, char *client_name) {
         
     krb5_error_code errno;
+    kadm5_ret_t retval = KADM5_OK;
 
     PyKAdminPrincipalObject *principal = (PyKAdminPrincipalObject *)Py_None;
+    krb5_principal temp = NULL;
 
     if (client_name) {
 
@@ -731,12 +733,14 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_name(PyKAdminObj
             Py_INCREF(kadmin);
             principal->kadmin = kadmin;
 
-            errno = krb5_parse_name(kadmin->context, client_name, &principal->entry.principal);
-            PyObject *result = PyKAdminPrincipal_reload(principal);
+            errno = krb5_parse_name(kadmin->context, client_name, &temp);
+            retval = kadm5_get_principal(kadmin->server_handle, temp, &principal->entry, KADM5_PRINCIPAL_NORMAL_MASK);
 
-            if (!result || errno) {
-                Py_INCREF(Py_None);
+            krb5_free_principal(kadmin->context, temp);
+
+            if ((retval != KADM5_OK) || errno) {
                 PyKAdminPrincipal_dealloc(principal);
+                Py_INCREF(Py_None);
                 principal = (PyKAdminPrincipalObject *)Py_None;
             }
 

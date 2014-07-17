@@ -149,7 +149,7 @@ static PyKAdminPrincipalObject *PyKAdminObject_get_principal(PyKAdminObject *sel
         return NULL;
     }
 
-    if (self->server_handle) {
+    if (self) {
         principal = PyKAdminPrincipalObject_principal_with_name(self, client_name);
 
     } 

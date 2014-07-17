@@ -66,7 +66,7 @@ def database_size():
     return stdoutdata.count('\n') - 2
 
 
-class KAdminUnitTests():
+class KAdminUnitTests(unittest.TestCase):
  
     ''' Missing in 2.6 '''
     def assertIsNotNone(self, expr, msg=None):
@@ -87,7 +87,7 @@ class KAdminUnitTests():
         self.kadm = kadm
 
         self.logger = logging.getLogger('python-kadmin')
-
+    
     def test_init_with_keytab(self):
         
         try:    
@@ -186,7 +186,7 @@ class KAdminUnitTests():
         account = TEST_ACCOUNTS[0]
 
         self.assertRaises(kadmin.KAdminError, kadm.delprinc, account)
-
+    
     def test_iteration(self):
 
         kadm = self.kadm
@@ -198,7 +198,7 @@ class KAdminUnitTests():
       
         self.assertEqual(count, size)
 
-        
+    
     def test_not_exists(self):
         
         kadm = self.kadm
@@ -241,11 +241,12 @@ class KAdminUnitTests():
         b = kadm.getprinc(account)
 
         self.assertNotEqual(a, b)
-
+    
 
 
 class KAdminLocalUnitTests(unittest.TestCase):
- 
+#class KAdminLocalUnitTests():
+
     ''' Missing in 2.6 '''
     def assertIsNotNone(self, expr, msg=None):
         self.assertFalse((expr is None), msg)
