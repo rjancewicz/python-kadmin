@@ -7,6 +7,7 @@
 
 #include "PyKAdminCommon.h"
 
+#include <bytesobject.h>
 #include <datetime.h>
 
 #define TIME_NONE ((time_t) -1)
@@ -115,7 +116,6 @@ static PyObject *PyKAdminPrincipal_set_attributes(PyKAdminPrincipalObject *self,
 
 static PyObject *PyKAdminPrincipal_unset_attributes(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
 
-    //kadm5_ret_t retval = KADM5_OK;
     unsigned int flag = 0; 
 
     if (!PyArg_ParseTuple(args, "(i)", &flag))
@@ -125,9 +125,6 @@ static PyObject *PyKAdminPrincipal_unset_attributes(PyKAdminPrincipalObject *sel
 
         self->entry.attributes &= ~flag;
         self->mask |= KADM5_ATTRIBUTES;
-
-        //retval = kadm5_modify_principal(self->kadmin->server_handle, &self->entry, KADM5_ATTRIBUTES);
-        //if (retval != KADM5_OK) { PyKAdminError_raise_kadm_error(retval, "kadm5_modify_principal"); return NULL; }
     }
 
     Py_RETURN_TRUE;
@@ -249,15 +246,16 @@ done:
 
 static PyObject *PyKAdminPrincipal_get_principal(PyKAdminPrincipalObject *self, void *closure) {
   
-    krb5_error_code ret = 0;
+    krb5_error_code code = 0;
     PyObject *principal = NULL;
     char *client_name   = NULL;
     
-    // todo: handle error
-    ret = krb5_unparse_name(self->kadmin->context, self->entry.principal, &client_name);
+    // todo: handle krb5_error_code
+    code = krb5_unparse_name(self->kadmin->context, self->entry.principal, &client_name);
+    if (code) {}
 
     if (client_name) {
-        principal = PyString_FromString(client_name);
+        principal = PyUnicode_FromString(client_name);
         free(client_name);
     }
 
@@ -275,7 +273,7 @@ static PyObject *PyKAdminPrincipal_get_mod_name(PyKAdminPrincipalObject *self, v
     ret = krb5_unparse_name(self->kadmin->context, self->entry.mod_name, &client_name);
 
     if (client_name) {
-        principal = PyString_FromString(client_name);
+        principal = PyUnicode_FromString(client_name);
         free(client_name);
     }
 
@@ -353,7 +351,7 @@ static PyObject *PyKAdminPrincipal_get_policy(PyKAdminPrincipalObject *self, voi
     if (self) {
 
         if (self->entry.policy) {
-            result = PyString_FromString(self->entry.policy);
+            result = PyUnicode_FromString(self->entry.policy);
         }
     }
 
@@ -382,6 +380,8 @@ static PyObject *PyKAdminPrincipal_get_kvno(PyKAdminPrincipalObject *self, void 
  *  SETTERS 
  */
 
+static char kNEVER[] = "never";
+
 static krb5_deltat _decode_timedelta_input(PyObject *timedelta) {
 
     PyDateTime_IMPORT;
@@ -395,13 +395,10 @@ static krb5_deltat _decode_timedelta_input(PyObject *timedelta) {
 
         if (PyDelta_CheckExact(timedelta)) {
             delta = pykadmin_seconds_from_pydatetime(timedelta);
-        } else if (PyUnicode_CheckExact(timedelta)) {
-            // TODO: unicode
-        } else if (PyString_CheckExact(timedelta)) {
-            date_string = PyString_AsString(timedelta);
-
+        } else if (PyUnicodeBytes_Check(timedelta)) {
+            date_string = PyUnicode_or_PyBytes_asCString(timedelta);
         } else if (timedelta == Py_None) {
-            date_string = "never";
+            date_string = kNEVER;
         }
         
         if (date_string) {
@@ -433,15 +430,10 @@ static krb5_timestamp _decode_timestamp_input(PyObject *date) {
 
         if (PyDate_CheckExact(date) || PyDateTime_CheckExact(date)) {
             timestamp = pykadmin_timestamp_from_pydatetime(date);
-
-        } else if (PyUnicode_CheckExact(date)) {
-            // TODO: unicode
-        } else if (PyString_CheckExact(date)) {
-            date_string = PyString_AsString(date);
-
+        } else if (PyUnicodeBytes_Check(date)) {
+            date_string = PyUnicode_or_PyBytes_asCString(date);
         } else if (date == Py_None) {
-            date_string = "never";
-
+            date_string = kNEVER;
         }
         
         if (date_string) {
@@ -551,16 +543,10 @@ int PyKAdminPrincipal_set_policy(PyKAdminPrincipalObject *self, PyObject *value,
                 self->mask |= KADM5_POLICY_CLR; 
             }
 
-            if (PyUnicode_CheckExact(value)) {
-                // TODO 
-            } else if (PyString_CheckExact(value)) {
+            policy_string = PyUnicode_or_PyBytes_asCString(value);
 
-                policy_string = PyString_AsString(value);
-
-            } else if (PyKAdminPolicyObject_CheckExact(value)) {
-
+            if (PyKAdminPolicyObject_CheckExact(value)) {
                 policy_string = PyKAdminPolicyObject_policy_name((PyKAdminPolicyObject *)value);
-
             }
 
             if (policy_string) {
@@ -724,7 +710,7 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_name(PyKAdminObj
     PyKAdminPrincipalObject *principal = (PyKAdminPrincipalObject *)Py_None;
     krb5_principal temp = NULL;
 
-    if (client_name) {
+    if (kadmin && client_name) {
 
         principal = (PyKAdminPrincipalObject *)PyKAdminPrincipal_new(&PyKAdminPrincipalObject_Type, NULL, NULL);
 
@@ -740,13 +726,13 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_name(PyKAdminObj
 
             if ((retval != KADM5_OK) || errno) {
                 PyKAdminPrincipal_dealloc(principal);
-                Py_INCREF(Py_None);
                 principal = (PyKAdminPrincipalObject *)Py_None;
             }
 
         }
     }
 
+    Py_INCREF(principal);
     return principal;
 }
 
@@ -756,23 +742,20 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_db_entry(PyKAdmi
 
     PyKAdminPrincipalObject *principal = (PyKAdminPrincipalObject *)PyKAdminPrincipal_new(&PyKAdminPrincipalObject_Type, NULL, NULL);
 
-    if (kdb) {
+    if (kadmin && kdb) {
 
-        Py_XINCREF(kadmin);
+        Py_INCREF(kadmin);
         principal->kadmin = kadmin;
 
         retval = pykadmin_kadm_from_kdb(kadmin, kdb, &principal->entry, KADM5_PRINCIPAL_NORMAL_MASK);
 
         if (retval) {
-
             PyKAdminPrincipal_dealloc(principal);
-            
-            // todo: set exception
             principal = NULL;
-
         } 
     }
 
+    Py_XINCREF(principal);
     return principal;
 }
 

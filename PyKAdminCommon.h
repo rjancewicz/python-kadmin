@@ -11,6 +11,8 @@
 
 #include "PyKAdminXDR.h"
 #include "PyKAdminObject.h"
+#include <bytesobject.h>
+
 
 #ifndef PYTHON3
 #define PyDateTime_DELTA_GET_DAYS(o)         (((PyDateTime_Delta*)o)->days)
@@ -18,7 +20,12 @@
 #define PyDateTime_DELTA_GET_MICROSECONDS(o) (((PyDateTime_Delta*)o)->microseconds)
 #endif
 
-int pykadmin_policy_exists(void *server_handle, char *name);
+#define PyUnicodeBytes_Check(obj) (PyUnicode_CheckExact(obj) || PyBytes_CheckExact(obj))
+
+inline char *PyUnicode_or_PyBytes_asCString(PyObject *in_str);
+
+
+int pykadmin_policy_exists(void *server_handle, const char *name);
 
 inline PyObject *pykadmin_pydatetime_from_timestamp(time_t timestamp);
 int pykadmin_timestamp_from_pydatetime(PyObject *datetime);
