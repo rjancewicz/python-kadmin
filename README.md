@@ -25,6 +25,71 @@ It is advised that kadmin_local is used for rapid unpacked iteration, other task
 
 
 ##Examples:
+
+###Principal Attributes:
+```python
+>>> princ = kadm.getprinc("user@EXAMPLE.COM")
+>>>
+>>> # getters only
+>>> princ.principal
+>>> # get: unicode
+>>>
+>>> princ.name
+>>> # get: unicode
+>>>
+>>> princ.mod_name
+>>> # get: unicode
+>>>
+>>> princ.mod_date
+>>> # get: datetime.datetime
+>>>
+>>> princ.last_pwd_change
+>>> # get: [datetime.datetime|None]
+>>>
+>>> princ.last_success
+>>> # get: [datetime.datetime|None]
+>>>
+>>> princ.last_failure
+>>> # get: [datetime.datetime|None]
+>>>
+>>>
+>>> #getters & setters
+>>> princ.expire = datetime.datetime(2014, 12, 25)
+>>> # get: datetime.datetime
+>>> # set: [str|unicode|datetime.datetime|None]
+>>>
+>>> princ.pwexpire = u'Now'
+>>> # get: datetime.datetime
+>>> # set: [str|unicode|datetime.datetime|None]
+>>>
+>>> princ.maxlife = "8 Days"
+>>> # get: datetime.timedelta
+>>> # set: [str|unicode|datetime.timedelta|None]
+>>>
+>>> princ.maxrenewlife = datetime.timedelta(days=2)
+>>> # get: datetime.timedelta
+>>> # set: [str|unicode|datetime.timedelta|None]
+>>>
+>>> princ.policy = "strong_password_policy"
+>>> # get: unicode
+>>> # set: [str|unicode|kadmin.Policy]
+>>>
+>>> princ.kvno = 1
+>>> # get: int
+>>> # set: [int]
+>>>
+>>> # at this point the local copy of the principal is modified
+>>> #  the remote will not change until commit is called as shown
+>>> princ.commit()
+>>>
+>>> # for an existing principal object discard local state and
+>>> #  fetch the state as it appears in the database
+>>> princ.reload()
+
+
+
+```
+
 ###Change a password:
 ```python
 princ = kadm.get_princ("user@EXAMPLE.COM")
@@ -67,5 +132,5 @@ kadm.each_principal(callback_b, data="Hello, ")
 for princ in kadm.principals('*'):
 	principal = kadm.get_princ(princ)
 	# use principal as needed
-	
+
 ```
