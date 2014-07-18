@@ -13,16 +13,38 @@ kadm5_get_principal(void *server_handle, krb5_principal principal,
 #include "PyKAdminCommon.h"
 #include <datetime.h>
 
+
 #define TIME_NONE ((time_t) -1)
 
-int pykadmin_policy_exists(void *server_handle, char *name) {
+
+inline char *PyUnicode_or_PyBytes_asCString(PyObject *in_str) {
+
+    char *out_str = NULL;
+
+    if (PyUnicode_CheckExact(in_str)) {
+
+        PyObject *ascii = PyUnicode_AsASCIIString(in_str);
+
+        if (ascii) {
+            out_str = PyBytes_AsString(in_str);
+            Py_XDECREF(ascii);
+        }
+
+    } else if (PyBytes_CheckExact(in_str)) {
+        out_str = PyBytes_AsString(in_str);
+    }
+
+    return out_str;
+}
+
+int pykadmin_policy_exists(void *server_handle, const char *name) {
 
     kadm5_ret_t retval = KADM5_OK;
-    kadm5_policy_ent_rec *policy = NULL; 
+    kadm5_policy_ent_rec policy; 
 
-    retval = kadm5_get_policy(server_handle, name, policy);
-    if (retval == KADM5_OK)
-        kadm5_free_policy_ent(server_handle, policy);
+    retval = kadm5_get_policy(server_handle, (char *)name, &policy);
+    if (retval == KADM5_OK) 
+        kadm5_free_policy_ent(server_handle, &policy);
 
     return (retval == KADM5_OK);
 }

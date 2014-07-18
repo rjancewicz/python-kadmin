@@ -102,7 +102,7 @@ static void _PyKAdminError_raise_exception(PyObject *storage, PyObject *error, c
         }
 
         if (!error_string) {
-            error_string = PyString_FromString(caller);
+            error_string = PyUnicode_FromString(caller);
         }
 
         PyDict_SetItemString(error_dict, kERROR_STRING, error_string);
