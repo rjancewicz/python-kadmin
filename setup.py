@@ -5,6 +5,14 @@ from distutils.core import setup, Extension
 from distutils.util import execute, newer
 from distutils.spawn import spawn
 
+#
+# hack to support linking when running
+#  python setup.py sdist
+#
+
+import os
+del os.link
+
 if newer('getdate.y', 'getdate.c'):
     execute(spawn, (['bison', '-y', '-o', 'getdate.c', 'getdate.y'],))
 
