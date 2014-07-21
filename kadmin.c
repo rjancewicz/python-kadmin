@@ -7,7 +7,6 @@
 #include "PyKAdminPrincipalObject.h"
 #include "PyKAdminPolicyObject.h"
 
-
 #ifdef KADMIN_LOCAL
 static PyKAdminObject *_kadmin_local(PyObject *self, PyObject *args); 
 #endif
@@ -23,14 +22,21 @@ krb5_ui_4 struct_version    = KADM5_STRUCT_VERSION;
 krb5_ui_4 api_version       = KADM5_API_VERSION_2;
 
 static struct PyMethodDef module_methods[] = {
-    
+
     #ifdef KADMIN_LOCAL
-    {"local",               (PyCFunction)_kadmin_local,                 METH_VARARGS, "local()"},
+    {"local",               (PyCFunction)_kadmin_local,             METH_NOARGS, "local()"},
     #endif
 
     {"init_with_ccache",   (PyCFunction)_kadmin_init_with_ccache,   METH_VARARGS, "init_with_ccache(principal, ccache)"},
     {"init_with_keytab",   (PyCFunction)_kadmin_init_with_keytab,   METH_VARARGS, "init_with_keytab(principal, keytab)"},
     {"init_with_password", (PyCFunction)_kadmin_init_with_password, METH_VARARGS, "init_with_password(principal, password)"},
+
+    /* todo: these should permit the user to set/get the 
+        service, struct, api version, default realm, ... 
+
+    {"get_option",         (PyCFunction)_get_option, METH_VARARGS,  "_get_option(option)"},
+    {"set_option",         (PyCFunction)_set_option, METH_VARARGS,  "_set_option(option, value)"},
+    */
 
     {NULL, NULL, 0, NULL}
 };
@@ -86,6 +92,8 @@ PyMODINIT_FUNC
     PyKAdminConstant_init(module);
 
 }
+
+
 
 #ifdef KADMIN_LOCAL
 static PyKAdminObject *_kadmin_local(PyObject *self, PyObject *args) {
@@ -212,7 +220,6 @@ static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) 
 
         krb5_free_principal(kadmin->context, princ);
     }
-
 
 
     retval = kadm5_init_with_skey(
