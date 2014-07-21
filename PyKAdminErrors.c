@@ -531,12 +531,12 @@ int PyKAdminError_init_kadm(PyObject *module, PyObject *base) {
         PyKAdminError_kadm_insert(module, base, KADM5_SETKEY3_ETYPE_MISMATCH,   "SetKey3EnctypeMismatchError",  "Mismatched enctypes for setkey3");
         PyKAdminError_kadm_insert(module, base, KADM5_MISSING_KRB5_CONF_PARAMS, "MissingKrb5ConfParamsError",   "Missing parameters in krb5.conf required for kadmin client");
         PyKAdminError_kadm_insert(module, base, KADM5_XDR_FAILURE,              "XDRFailureError",              "XDR encoding error");
-        #ifdef KADM5_CANT_RESOLVE
-        PyKAdminError_kadm_insert(module, base, KADM5_CANT_RESOLVE,             "CantResolveError",             "");
-        #endif
-        #ifdef KADM5_PASS_Q_GENERIC
-        PyKAdminError_kadm_insert(module, base, KADM5_PASS_Q_GENERIC,           "PasswordGenericError",         "Database synchronization failed");
-        #endif
+#       ifdef KADM5_CANT_RESOLVE
+            PyKAdminError_kadm_insert(module, base, KADM5_CANT_RESOLVE,             "CantResolveError",             "");
+#       endif
+#       ifdef KADM5_PASS_Q_GENERIC
+            PyKAdminError_kadm_insert(module, base, KADM5_PASS_Q_GENERIC,           "PasswordGenericError",         "Database synchronization failed");
+#       endif
     
         result = 1;
     }

@@ -14,7 +14,8 @@ static void PyKAdminPolicyObject_dealloc(PyKAdminPolicyObject *self) {
 
         Py_XDECREF(self->kadmin);
 
-        self->ob_type->tp_free((PyObject*)self);
+        //self->ob_type->tp_free((PyObject*)self);
+        Py_TYPE(self)->tp_free((PyObject *)self);
     }
 }
 

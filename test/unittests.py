@@ -9,6 +9,10 @@ import logging
 
 import os.path
 
+try: 
+    input = raw_input
+except NameError: 
+    pass
 
 TEST_PRINCIPAL = "test/admin@EXAMPLE.COM"
 TEST_KEYTAB    = "./test.keytab"
@@ -44,31 +48,31 @@ def create_test_accounts():
 
     kadmin_local = subprocess.Popen(['kadmin.local'], shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    command = ""
+    command = u''
 
     for account in TEST_ACCOUNTS:
-        command += 'ank -randkey {0}\n'.format(account)
+        command += u'ank -randkey {0}\n'.format(account)
 
-    kadmin_local.communicate(command)
+    kadmin_local.communicate(command.encode())
     kadmin_local.wait()
 
 def delete_test_accounts():
     
     kadmin_local = subprocess.Popen(['kadmin.local'], shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    command = ""
+    command = u''
 
     for account in TEST_ACCOUNTS:
-        command += 'delprinc -force {0}\n'.format(account)
+        command += u'delprinc -force {0}\n'.format(account)
 
-    kadmin_local.communicate(command)
+    kadmin_local.communicate(command.encode())
     kadmin_local.wait()
 
 def database_size():
 
     kadmin_local = subprocess.Popen(['kadmin.local'], shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    (stdoutdata, stderrdata) = kadmin_local.communicate('listprincs\n')
+    (stdoutdata, stderrdata) = kadmin_local.communicate(u'listprincs\n'.encode())
 
     kadmin_local.wait()
 
@@ -78,7 +82,7 @@ def database_size():
     # kadmin.local: 
     #
 
-    return stdoutdata.count('\n') - 2
+    return stdoutdata.decode().count('\n') - 2
 
 
 class KAdminUnitTests(unittest.TestCase):
@@ -474,7 +478,7 @@ class KAdminLocalUnitTests(unittest.TestCase):
 
 def main():
     
-    confirm = raw_input('run tests against local kadmin server [yes/no] ? ')
+    confirm = input('run tests against local kadmin server [yes/no] ? ')
 
     if confirm.lower() == 'yes':
 

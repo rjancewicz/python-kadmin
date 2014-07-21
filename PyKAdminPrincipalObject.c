@@ -38,7 +38,8 @@ static void PyKAdminPrincipal_dealloc(PyKAdminPrincipalObject *self) {
 
     Py_XDECREF(self->kadmin);
    
-    self->ob_type->tp_free((PyObject*)self);
+    //self->ob_type->tp_free((PyObject*)self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *PyKAdminPrincipal_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
@@ -334,7 +335,9 @@ static PyObject *PyKAdminPrincipal_get_attributes(PyKAdminPrincipalObject *self,
     while (mask < kFLAG_MAX) {
 
         if (mask & self->entry.attributes) {
-            PyList_Append(attrs, PyInt_FromLong(mask));
+
+            PyList_Append(attrs, PyUnifiedLongInt_FromLong(mask));
+            
         }
 
         mask = mask << 1;
@@ -364,11 +367,7 @@ static PyObject *PyKAdminPrincipal_get_kvno(PyKAdminPrincipalObject *self, void 
     PyObject *result = NULL;
     
     if (self) {
-#if PY_MAJOR_VERSION > 2
-            result = PyLong_FromLong((long) self->entry.kvno);
-#else
-            result = PyInt_FromLong((long) self->entry.kvno);
-#endif
+        result = PyUnifiedLongInt_FromLong(self->entry.kvno);
     }
 
     Py_XINCREF(result);
@@ -514,11 +513,7 @@ int PyKAdminPrincipal_set_kvno(PyKAdminPrincipalObject *self, PyObject *value, v
     unsigned long kvno = 0;
 
     if (self) {
-#if PY_MAJOR_VERSION > 2
-            kvno = PyLong_AsUnsignedLong(value);
-#else
-            kvno = PyInt_AsUnsignedLongMask(value);
-#endif
+        kvno = PyUnifiedLongInt_AsUnsignedLong(value);
     }
  
     if (!PyErr_Occurred()) {

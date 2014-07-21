@@ -13,9 +13,7 @@ kadm5_get_principal(void *server_handle, krb5_principal principal,
 #include "PyKAdminCommon.h"
 #include <datetime.h>
 
-
 #define TIME_NONE ((time_t) -1)
-
 
 inline char *PyUnicode_or_PyBytes_asCString(PyObject *in_str) {
 
@@ -37,17 +35,7 @@ inline char *PyUnicode_or_PyBytes_asCString(PyObject *in_str) {
     return out_str;
 }
 
-int pykadmin_policy_exists(void *server_handle, const char *name) {
 
-    kadm5_ret_t retval = KADM5_OK;
-    kadm5_policy_ent_rec policy; 
-
-    retval = kadm5_get_policy(server_handle, (char *)name, &policy);
-    if (retval == KADM5_OK) 
-        kadm5_free_policy_ent(server_handle, &policy);
-
-    return (retval == KADM5_OK);
-}
 
 
 inline PyObject *pykadmin_pydatetime_from_timestamp(time_t timestamp) {
@@ -118,6 +106,17 @@ int pykadmin_seconds_from_pydatetime(PyObject *delta) {
 
 }
 
+int pykadmin_policy_exists(void *server_handle, const char *name) {
+
+    kadm5_ret_t retval = KADM5_OK;
+    kadm5_policy_ent_rec policy; 
+
+    retval = kadm5_get_policy(server_handle, (char *)name, &policy);
+    if (retval == KADM5_OK) 
+        kadm5_free_policy_ent(server_handle, &policy);
+
+    return (retval == KADM5_OK);
+}
 
 krb5_error_code pykadmin_unpack_xdr_osa_princ_ent_rec(PyKAdminObject *kadmin, krb5_db_entry *kdb, osa_princ_ent_rec *adb) {
 
@@ -444,12 +443,16 @@ int pykadmin_compare_tl_data(krb5_context ctx, krb5_tl_data *a, krb5_tl_data *b)
 
         if (result)
             result &= (memcmp(a->tl_data_contents, b->tl_data_contents, a->tl_data_length) == 0);
+
+
+        if (result && a->tl_data_next) 
+            result &= pykadmin_compare_tl_data(ctx, a->tl_data_next, b->tl_data_next);
+
     } else {
 
         result &= (a == b);
-    } 
+    }
 
-    // tl_data_next 
 
     return result;
 }
