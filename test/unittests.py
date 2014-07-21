@@ -7,6 +7,9 @@ import unittest
 import subprocess
 import logging
 
+import os.path
+
+
 TEST_PRINCIPAL = "test/admin@EXAMPLE.COM"
 TEST_KEYTAB    = "./test.keytab"
 TEST_CCACHE    = "./krb5cc_test"
@@ -16,6 +19,18 @@ TEST_LOG       = "./unittests.log"
 LOG_FORMAT     = "%(asctime)-15s %(message)s"
 
 TEST_ACCOUNTS = ["test{0:02d}@EXAMPLE.COM".format(i) for i in range(100)]
+
+
+def create_test_prinicipal():
+
+    data = None
+
+    if not os.path.isfile(TEST_KEYTAB):
+
+        #kadmin_local = subprocess.Popen(['kadmin.local'], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        pass
+
 
 def create_ccache():
 
@@ -462,6 +477,8 @@ def main():
     confirm = raw_input('run tests against local kadmin server [yes/no] ? ')
 
     if confirm.lower() == 'yes':
+
+        create_test_prinicipal()
         create_ccache()
 
         logging.basicConfig(filename=TEST_LOG, format=LOG_FORMAT, level=logging.DEBUG)
