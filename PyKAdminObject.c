@@ -30,7 +30,8 @@ static void PyKAdminObject_dealloc(PyKAdminObject *self) {
             free(self->realm);
         }
 
-        self->ob_type->tp_free((PyObject*)self);
+        //self->ob_type->tp_free((PyObject*)self);
+        Py_TYPE(self)->tp_free((PyObject *)self);
     }
 }
     
@@ -382,22 +383,23 @@ static PyMethodDef PyKAdminObject_methods[] = {
     {"lock",                (PyCFunction)NULL,                            METH_NOARGS, ""},
     {"unlock",              (PyCFunction)NULL,                            METH_NOARGS, ""},
 
-    #ifdef KADMIN_LOCAL
+#   ifdef KADMIN_LOCAL
     /*
         due to the nature of how the kadm5clnt library interfaces with the kerberos database over the rpc layer 
             we are unable to (and should not) expose unpacked iteration "each" to the gssapi version of python-kadmin
      */
     {"each_principal",      (PyCFunction)PyKAdminObject_each_principal,   (METH_VARARGS | METH_KEYWORDS), ""},
     {"each_policy",         (PyCFunction)PyKAdminObject_each_policy,      (METH_VARARGS | METH_KEYWORDS), ""},
-    #endif
+#   endif
 
     {NULL, NULL, 0, NULL}
 };
 
 
 PyTypeObject PyKAdminObject_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
+    //PyObject_HEAD_INIT(NULL)
+    //0,                         /*ob_size*/
     "kadmin.KAdmin",             /*tp_name*/
     sizeof(PyKAdminObject),             /*tp_basicsize*/
     0,                         /*tp_itemsize*/

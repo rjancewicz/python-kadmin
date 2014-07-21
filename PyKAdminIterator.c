@@ -10,7 +10,8 @@ static void PyKAdminIterator_dealloc(PyKAdminIterator *self) {
     kadm5_free_name_list(self->kadmin->server_handle, self->names, self->count);
     Py_XDECREF(self->kadmin);
 
-    self->ob_type->tp_free((PyObject*)self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
+    //self->ob_type->tp_free((PyObject*)self);
 }
 
 
@@ -49,8 +50,9 @@ static PyObject *PyKAdminIterator_next(PyKAdminIterator *self) {
 }
 
 PyTypeObject PyKAdminIterator_Type = {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
+    //PyObject_HEAD_INIT(NULL)
+    //0,                         /*ob_size*/
     "kadmin.PrincipalIterator",             /*tp_name*/
     sizeof(PyKAdminIterator),             /*tp_basicsize*/
     0,                         /*tp_itemsize*/

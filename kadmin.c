@@ -23,14 +23,21 @@ krb5_ui_4 struct_version    = KADM5_STRUCT_VERSION;
 krb5_ui_4 api_version       = KADM5_API_VERSION_2;
 
 static struct PyMethodDef module_methods[] = {
-    
+
     #ifdef KADMIN_LOCAL
-    {"local",               (PyCFunction)_kadmin_local,                 METH_VARARGS, "local()"},
+    {"local",               (PyCFunction)_kadmin_local,             METH_NOARGS, "local()"},
     #endif
 
     {"init_with_ccache",   (PyCFunction)_kadmin_init_with_ccache,   METH_VARARGS, "init_with_ccache(principal, ccache)"},
     {"init_with_keytab",   (PyCFunction)_kadmin_init_with_keytab,   METH_VARARGS, "init_with_keytab(principal, keytab)"},
     {"init_with_password", (PyCFunction)_kadmin_init_with_password, METH_VARARGS, "init_with_password(principal, password)"},
+
+    /* todo: these should permit the user to set/get the 
+        service, struct, api version, default realm, ... 
+
+    {"get_option",         (PyCFunction)_get_option, METH_VARARGS,  "_get_option(option)"},
+    {"set_option",         (PyCFunction)_set_option, METH_VARARGS,  "_set_option(option, value)"},
+    */
 
     {NULL, NULL, 0, NULL}
 };
@@ -57,35 +64,97 @@ void PyKAdminConstant_init(PyObject *module) {
     
 }
 
+#ifdef PYTHON3
+
+#   ifdef KADMIN_LOCAL
+#   define PyKADMIN_INIT_FUNC PyObject *PyInit_kadmin_local(void)
+#   else
+#   define PyKADMIN_INIT_FUNC PyObject *PyInit_kadmin(void)
+#   endif
+
+#define PyModule_INIT_RETURN return NULL
+
+static int pykadmin_traverse(PyObject *module, visitproc visit, void *arg) {
+    Py_VISIT(GETSTATE(module)->error);
+    return 0;
+}
+
+static int pykadmin_clear(PyObject *module) {
+    Py_CLEAR(GETSTATE(module)->error);
+    return 0;
+}
+
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        module_docstring,
+        NULL,
+        sizeof(struct module_state),
+        module_methods,
+        NULL,
+        pykadmin_traverse,
+        pykadmin_clear,
+        NULL
+};
+
+#else 
+    
+#   ifdef KADMIN_LOCAL
+#   define PyKADMIN_INIT_FUNC void initkadmin_local(void) 
+#   else
+#   define PyKADMIN_INIT_FUNC void initkadmin(void)
+#   endif
+
+#define PyModule_INIT_RETURN return
+
+#endif
 
 
+
+/*
 PyMODINIT_FUNC 
 #ifdef KADMIN_LOCAL
     initkadmin_local(void) 
 #else
     initkadmin(void)
 #endif
-{
+*/
+
+PyKADMIN_INIT_FUNC {
 
     if (PyType_Ready(&PyKAdminObject_Type) < 0) 
-        return;
+        PyModule_INIT_RETURN;
 
     if (PyType_Ready(&PyKAdminPrincipalObject_Type) < 0)
-        return;
+        PyModule_INIT_RETURN;
 
-    Py_XINCREF(&PyKAdminObject_Type);
-    Py_XINCREF(&PyKAdminPrincipalObject_Type);
+    if (PyType_Ready(&PyKAdminPolicyObject_Type) < 0)
+        PyModule_INIT_RETURN;
 
+    #ifdef PYTHON3
+    PyObject *module = PyModule_Create(&moduledef);
+    #else
     PyObject *module = Py_InitModule3(kMODULE_NAME, module_methods, module_docstring);
+    #endif
 
-    if (!module) 
-        return;
+
+    if (!module) {
+        PyModule_INIT_RETURN;
+    }
+
+    Py_INCREF(&PyKAdminObject_Type);
+    Py_INCREF(&PyKAdminPrincipalObject_Type);
+    Py_INCREF(&PyKAdminPolicyObject_Type);
                 
     PyKAdminError_init(module);
-
     PyKAdminConstant_init(module);
 
+#ifdef PYTHON3
+    return module;
+#endif
+
 }
+
+
 
 #ifdef KADMIN_LOCAL
 static PyKAdminObject *_kadmin_local(PyObject *self, PyObject *args) {
@@ -212,7 +281,6 @@ static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) 
 
         krb5_free_principal(kadmin->context, princ);
     }
-
 
 
     retval = kadm5_init_with_skey(
