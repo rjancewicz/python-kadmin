@@ -1,10 +1,11 @@
 
+#include "PyKAdminPolicyObject.h"
+
 #include "PyKAdminObject.h"
 #include "PyKAdminErrors.h"
 #include "PyKAdminIterator.h"
 #include "PyKAdminPrincipalObject.h"
 
-#include "PyKAdminPolicyObject.h"
 
 static void PyKAdminPolicyObject_dealloc(PyKAdminPolicyObject *self) {
     
@@ -13,9 +14,7 @@ static void PyKAdminPolicyObject_dealloc(PyKAdminPolicyObject *self) {
 
         Py_XDECREF(self->kadmin);
 
-        PyObject_Del((PyObject*)self);
-
-        //self->ob_type->tp_free((PyObject*)self);
+        self->ob_type->tp_free((PyObject*)self);
     }
 }
 
@@ -151,7 +150,7 @@ PyTypeObject PyKAdminPolicyObject_Type = {
     0,                         /* tp_descr_set */
     0,                         /* tp_dictoffset */
     (initproc)PyKAdminPolicyObject_init,      /* tp_init */
-    PyType_GenericAlloc,                         /* tp_alloc */
+    0,                         /* tp_alloc */
     PyKAdminPolicyObject_new,                 /* tp_new */
 };
 

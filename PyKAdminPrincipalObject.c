@@ -622,17 +622,17 @@ static PyMethodDef PyKAdminPrincipal_methods[] = {
 
 static PyGetSetDef PyKAdminPrincipal_getters_setters[] = {
 
-    {"principal",       (getter)PyKAdminPrincipal_get_principal,       NULL, kDOCSTRING_NAME, NULL},
-    {"name",            (getter)PyKAdminPrincipal_get_principal,       NULL, kDOCSTRING_NAME, NULL},
+    {"principal",       (getter)PyKAdminPrincipal_get_principal,       NULL, kDOCSTRING_NAME,            NULL},
+    {"name",            (getter)PyKAdminPrincipal_get_principal,       NULL, kDOCSTRING_NAME,            NULL},
 
-    {"mod_name",        (getter)PyKAdminPrincipal_get_mod_name,        NULL, kDOCSTRING_MOD_NAME, NULL},
-    {"mod_date",        (getter)PyKAdminPrincipal_get_mod_date,        NULL, kDOCSTRING_MOD_DATE, NULL},
+    {"mod_name",        (getter)PyKAdminPrincipal_get_mod_name,        NULL, kDOCSTRING_MOD_NAME,        NULL},
+    {"mod_date",        (getter)PyKAdminPrincipal_get_mod_date,        NULL, kDOCSTRING_MOD_DATE,        NULL},
 
     {"last_pwd_change", (getter)PyKAdminPrincipal_get_last_pwd_change, NULL, kDOCSTRING_LAST_PWD_CHANGE, NULL},
-    {"last_success",    (getter)PyKAdminPrincipal_get_last_success,    NULL, kDOCSTRING_LAST_SUCCESS, NULL},
-    {"last_failure",    (getter)PyKAdminPrincipal_get_last_failed,     NULL, kDOCSTRING_LAST_FAILURE, NULL},
+    {"last_success",    (getter)PyKAdminPrincipal_get_last_success,    NULL, kDOCSTRING_LAST_SUCCESS,    NULL},
+    {"last_failure",    (getter)PyKAdminPrincipal_get_last_failed,     NULL, kDOCSTRING_LAST_FAILURE,    NULL},
 
-    {"attributes",      (getter)PyKAdminPrincipal_get_attributes,      NULL, kDOCSTRING_ATTRIBUTES, NULL},
+    {"attributes",      (getter)PyKAdminPrincipal_get_attributes,      NULL, kDOCSTRING_ATTRIBUTES,      NULL},
 
 
     // setter attributes

@@ -79,8 +79,12 @@ PyMODINIT_FUNC
     if (PyType_Ready(&PyKAdminPrincipalObject_Type) < 0)
         return;
 
+    if (PyType_Ready(&PyKAdminPolicyObject_Type) < 0)
+        return;
+
     Py_XINCREF(&PyKAdminObject_Type);
     Py_XINCREF(&PyKAdminPrincipalObject_Type);
+    Py_XINCREF(&PyKAdminPolicyObject_Type);
 
     PyObject *module = Py_InitModule3(kMODULE_NAME, module_methods, module_docstring);
 
