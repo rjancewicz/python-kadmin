@@ -55,10 +55,10 @@ static PyObject *PyKAdminObject_new(PyTypeObject *type, PyObject *args, PyObject
         self->server_handle = NULL;
 
         // attempt to load the default realm for this connection
-        //krb5_get_default_realm(self->context, &self->realm);
-        //if (!self->realm) {
+        krb5_get_default_realm(self->context, &self->realm);
+        if (!self->realm) {
         //    // todo : fail 
-        //}
+        }
 
         self->_storage = PyDict_New();
 
@@ -356,6 +356,18 @@ static PyObject *PyKAdminObject_each_policy(PyKAdminObject *self, PyObject *args
 }
 #endif
 
+// TODO 
+static PyObject *PyKAdminObject_modprinc(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
+
+    PyObject *principal = NULL;
+
+    if (!PyArg_ParseTuple(args, "O", &principal))
+        return NULL;
+
+    return NULL;
+
+}
+
 
 static PyMethodDef PyKAdminObject_methods[] = {
 
@@ -382,6 +394,9 @@ static PyMethodDef PyKAdminObject_methods[] = {
     // todo implement
     {"lock",                (PyCFunction)NULL,                            METH_NOARGS, ""},
     {"unlock",              (PyCFunction)NULL,                            METH_NOARGS, ""},
+
+    {"modprinc",            (PyCFunction)PyKAdminObject_modprinc,               (METH_VARARGS | METH_KEYWORDS), ""},
+    {"modify_principal",    (PyCFunction)PyKAdminObject_modprinc,               (METH_VARARGS | METH_KEYWORDS), ""},
 
 #   ifdef KADMIN_LOCAL
     /*

@@ -7,7 +7,6 @@
 #include "PyKAdminPrincipalObject.h"
 #include "PyKAdminPolicyObject.h"
 
-
 #ifdef KADMIN_LOCAL
 static PyKAdminObject *_kadmin_local(PyObject *self, PyObject *args); 
 #endif

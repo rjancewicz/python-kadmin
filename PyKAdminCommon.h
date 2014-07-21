@@ -24,13 +24,18 @@
 
 inline char *PyUnicode_or_PyBytes_asCString(PyObject *in_str);
 
-
 int pykadmin_policy_exists(void *server_handle, const char *name);
 
 inline PyObject *pykadmin_pydatetime_from_timestamp(time_t timestamp);
 int pykadmin_timestamp_from_pydatetime(PyObject *datetime);
 
 int pykadmin_seconds_from_pydatetime(PyObject *delta);
+
+
+char *pykadmin_timestamp_as_isodate(time_t timestamp, const char *zero);
+char *pykadmin_timestamp_as_deltastr(int seconds, const char *zero);
+
+
 
 krb5_error_code pykadmin_kadm_from_kdb(PyKAdminObject *kadmin, krb5_db_entry *kdb, kadm5_principal_ent_rec *entry, long mask); 
 

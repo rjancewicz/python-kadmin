@@ -36,6 +36,59 @@ inline char *PyUnicode_or_PyBytes_asCString(PyObject *in_str) {
 }
 
 
+char *pykadmin_timestamp_as_isodate(time_t timestamp, const char *zero) {
+
+    struct tm *timeinfo; 
+    char *isodate = NULL;
+
+    if (timestamp) { 
+        isodate = malloc(32);
+
+        if (isodate) {
+
+            timeinfo = localtime(&timestamp);
+            strftime(isodate, 32, "%FT%T%z", timeinfo);
+        }
+    } else {
+        isodate = strdup(zero);
+    }
+
+    return isodate;
+}
+
+char *pykadmin_timestamp_as_deltastr(int seconds, const char *zero) {
+
+    char *deltastr = NULL;
+    int negative, days, hours, minutes; 
+
+    if (seconds != 0) {
+
+        if (seconds < 0) {
+            seconds *= -1; 
+            negative = 1; 
+        }
+
+        days    = seconds / (24 * 3600);
+        seconds %= 24 * 3600;
+        hours   = seconds / 3600;
+        seconds %= 3600;
+        minutes = seconds / 60;
+        seconds %= 60;
+
+        deltastr = malloc(64);
+
+        if (deltastr) {
+            snprintf(deltastr, 64, "%s%d %s %02d:%02d:%02d", negative ? "-" : "",  days, days == 1 ? "day" : "days", hours, minutes, seconds);
+        }
+
+    } else {
+
+        deltastr = strdup(zero);
+    }
+    
+    return deltastr;
+}
+
 
 
 inline PyObject *pykadmin_pydatetime_from_timestamp(time_t timestamp) {
