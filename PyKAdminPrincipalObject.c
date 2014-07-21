@@ -556,6 +556,7 @@ int PyKAdminPrincipal_set_kvno(PyKAdminPrincipalObject *self, PyObject *value, v
 
 int PyKAdminPrincipal_set_policy(PyKAdminPrincipalObject *self, PyObject *value, void *closure) {
 
+    int result = 1; 
     char *policy_string = NULL;
 
     if (self) {
@@ -585,20 +586,44 @@ int PyKAdminPrincipal_set_policy(PyKAdminPrincipalObject *self, PyObject *value,
                     // set policy flag and remove policy clear flag if set.
                     self->mask |= KADM5_POLICY;
                     self->mask &= ~KADM5_POLICY_CLR;
+                    result = 0; 
                 }
             }
-
         }
     }
 
-    return 0;
+    if (result)
+        PyErr_SetString(PyExc_ValueError, "Invalid input");
+
+    return result;
 
 }
 
+/*
+    Set each of the requested attributes using their internal setter routine. 
+    Fails at first error and should raise the error of the setter which failed.
+    
+    If all setters finish the commit function will automatically be called and flush changes to the database.
 
+    returns Py_True on success NULL otherwise
+
+*/
 static PyObject *PyKAdminPrincipal_modify(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
 
-    // TODO: principal.modify(expire=a, pwexpire=b, maxlife=c, maxrenewlife=d, attributes=e, policy=f, kvno=g)
+    // TODO: principal.modify(expire=a, pwexpire=b, maxlife=c, maxrenewlife=d, policy=f, kvno=g, attributes=e, commit=False)
+    /* 
+        equivilent to 
+
+        principal.expire = a
+        principal.pwexpire = b 
+        principal.maxlife = c 
+        principal.maxrenewlife = d 
+        principal.policy = e 
+        principal.kvno = f 
+        principal.attributes = g 
+
+        principal.commit()
+    */
 
     PyObject *expire       = NULL;
     PyObject *pwexpire     = NULL;
@@ -610,7 +635,7 @@ static PyObject *PyKAdminPrincipal_modify(PyKAdminPrincipalObject *self, PyObjec
 
     int result = 0; 
 
-    static char *kwlist[] = {"expire", "pwexpire", "maxlife", "maxrenewlife", "policy", "kvno", "attributes"};
+    static char *kwlist[] = {"expire", "pwexpire", "maxlife", "maxrenewlife", "policy", "kvno", "attributes", NULL};
     
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOOOOOO", kwlist, &expire, &pwexpire, &maxlife, &maxrenewlife, &policy, &kvno, &attributes))
         return NULL;
@@ -842,6 +867,13 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_db_entry(PyKAdmi
     Py_XINCREF(principal);
     return principal;
 }
+
+PyObject *PyKAdminPrincipalObject_modify_principal(PyKAdminPrincipalObject *princ, PyObject *args, PyObject *kwds) {
+
+    return PyKAdminPrincipal_modify(princ, args, kwds);
+
+}
+
 
 void PyKAdminPrincipalObject_destroy(PyKAdminPrincipalObject *self) {
     PyKAdminPrincipal_dealloc(self);

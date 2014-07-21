@@ -356,19 +356,6 @@ static PyObject *PyKAdminObject_each_policy(PyKAdminObject *self, PyObject *args
 }
 #endif
 
-// TODO 
-static PyObject *PyKAdminObject_modprinc(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
-
-    PyObject *principal = NULL;
-
-    if (!PyArg_ParseTuple(args, "O", &principal))
-        return NULL;
-
-    return NULL;
-
-}
-
-
 static PyMethodDef PyKAdminObject_methods[] = {
 
     {"ank",                 (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
@@ -382,8 +369,6 @@ static PyMethodDef PyKAdminObject_methods[] = {
 
     {"getprinc",            (PyCFunction)PyKAdminObject_get_principal,    METH_VARARGS, ""},
     {"get_principal",       (PyCFunction)PyKAdminObject_get_principal,    METH_VARARGS, ""},
-
-
     
     {"getpol",              (PyCFunction)PyKAdminObject_get_policy,       METH_VARARGS, ""},
     {"get_policy",          (PyCFunction)PyKAdminObject_get_policy,       METH_VARARGS, ""},
@@ -394,9 +379,6 @@ static PyMethodDef PyKAdminObject_methods[] = {
     // todo implement
     {"lock",                (PyCFunction)NULL,                            METH_NOARGS, ""},
     {"unlock",              (PyCFunction)NULL,                            METH_NOARGS, ""},
-
-    {"modprinc",            (PyCFunction)PyKAdminObject_modprinc,               (METH_VARARGS | METH_KEYWORDS), ""},
-    {"modify_principal",    (PyCFunction)PyKAdminObject_modprinc,               (METH_VARARGS | METH_KEYWORDS), ""},
 
 #   ifdef KADMIN_LOCAL
     /*
