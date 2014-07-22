@@ -8,28 +8,13 @@
 static void PyKAdminIterator_dealloc(PyKAdminIterator *self) {
       
     kadm5_free_name_list(self->kadmin->server_handle, self->names, self->count);
-    Py_XDECREF(self->kadmin);
+    Py_DECREF(self->kadmin);
 
     Py_TYPE(self)->tp_free((PyObject *)self);
-    //self->ob_type->tp_free((PyObject*)self);
 }
 
 
 static int PyKAdminIterator_init(PyKAdminIterator *self, PyObject *args, PyObject *kwds) {
-        
-    self->count = 0x0; 
-    self->index = 0x0;
-
-    if (self->kadmin->server_handle) {
-
-        if (self->mode & iterate_principals) {  
-            kadm5_get_principals(self->kadmin->server_handle, self->match, &self->names, &self->count);
-        } else if (self->mode & iterate_policies) {
-            kadm5_get_policies(self->kadmin->server_handle, self->match, &self->names, &self->count);
-        }
-    }
-
-
     return 0;
 }
 
@@ -41,7 +26,7 @@ static PyObject *PyKAdminIterator_next(PyKAdminIterator *self) {
     if (self->index < self->count) {
 
         name = self->names[self->index];
-        next = Py_BuildValue("s", name);
+        next = PyUnicode_FromString(name);
 
         self->index++;
     }
@@ -93,25 +78,46 @@ PyTypeObject PyKAdminIterator_Type = {
 };
 
 
+PyKAdminIterator *PyKAdminIterator_principal_iterator(PyKAdminObject *kadmin, char *match) {
 
-PyKAdminIterator *PyKAdminIterator_create(PyKAdminObject *kadmin, PyKadminIteratorModes mode, char *match) {
-
+    kadm5_ret_t retval = KADM5_OK;
     PyKAdminIterator *iter = PyObject_New(PyKAdminIterator, &PyKAdminIterator_Type);
 
     if (iter) {
-        Py_XINCREF(kadmin);
-        iter->kadmin = kadmin;
-        iter->mode   = mode;
-        iter->match  = match;
+
+            iter->count = 0x0; 
+            iter->index = 0x0;
+
+            iter->kadmin = kadmin;
+            Py_INCREF(kadmin);
+
+            retval = kadm5_get_principals(kadmin->server_handle, match, &iter->names, &iter->count);
+            if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_get_principals"); }
     }
 
-    PyKAdminIterator_init(iter, NULL, NULL);
     Py_XINCREF(iter);
-
     return iter;
 }
 
-void PyKAdminIterator_destroy(PyKAdminIterator *self) {
-    PyKAdminIterator_dealloc(self);
+
+PyKAdminIterator *PyKAdminIterator_policy_iterator(PyKAdminObject *kadmin, char *match) {
+
+    kadm5_ret_t retval = KADM5_OK;
+    PyKAdminIterator *iter = PyObject_New(PyKAdminIterator, &PyKAdminIterator_Type);
+
+    if (iter) {
+
+            iter->count = 0x0; 
+            iter->index = 0x0;
+
+            iter->kadmin = kadmin;
+            Py_INCREF(kadmin);
+
+            retval = kadm5_get_policies(kadmin->server_handle, match, &iter->names, &iter->count);
+            if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_get_policies"); }
+    }
+
+    Py_XINCREF(iter);
+    return iter;
 }
 

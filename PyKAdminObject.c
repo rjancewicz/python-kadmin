@@ -156,30 +156,28 @@ static PyKAdminPolicyObject *PyKAdminObject_get_policy(PyKAdminObject *self, PyO
 static PyKAdminIterator *PyKAdminObject_principal_iter(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
 
     char *match = NULL;
-    PyObject *unpack = Py_False; 
-    PyKadminIteratorModes mode = iterate_principals;
 
-    static char *kwlist[] = {"match", "unpack", NULL};
+    static char *kwlist[] = {"match", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|zO", kwlist, &match, &unpack))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|z", kwlist, &match))
         return NULL;
 
-    return PyKAdminIterator_create(self, mode, match);
+    return PyKAdminIterator_principal_iterator(self, match);
+    //PyKAdminIterator_create(self, iterate_principals, match);
 }
 
 
 static PyKAdminIterator *PyKAdminObject_policy_iter(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
 
     char *match = NULL;
-    PyObject *unpack = Py_False; 
-    PyKadminIteratorModes mode = iterate_policies;
 
-    static char *kwlist[] = {"match", "unpack", NULL};
+    static char *kwlist[] = {"match", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|zO", kwlist, &match, &unpack))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|z", kwlist, &match))
         return NULL;
 
-    return PyKAdminIterator_create(self, mode, match);
+    return PyKAdminIterator_policy_iterator(self, match);
+    //return PyKAdminIterator_create(self, iterate_policies, match);
 }
 
 

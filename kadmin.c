@@ -125,6 +125,9 @@ PyKADMIN_INIT_FUNC {
     if (PyType_Ready(&PyKAdminPolicyObject_Type) < 0)
         PyModule_RETURN_ERROR;
 
+    if (PyType_Ready(&PyKAdminIterator_Type) < 0)
+        PyModule_RETURN_ERROR;
+
     // initialize the module
 
 #   ifdef PYTHON3
@@ -188,32 +191,36 @@ char **_kadmin_dict_to_db_args(PyObject *dict) {
 
     Py_ssize_t length = PyDict_Size(dict) + 1;
 
-    db_args = calloc(length, sizeof(intptr_t));
+    if (dict) {
 
-    if (db_args && PyDict_CheckExact(dict)) {
+        db_args = calloc(length, sizeof(intptr_t));
 
-        while (PyDict_Next(dict, &position, &key, &value)) {
+        if (db_args && PyDict_CheckExact(dict)) {
 
-            if (PyUnicodeBytes_Check(key) && PyUnicodeBytes_Check(value)) {
+            while (PyDict_Next(dict, &position, &key, &value)) {
 
-                str_key   = PyUnicode_or_PyBytes_asCString(key);
-                str_value = PyUnicode_or_PyBytes_asCString(value);
+                if (PyUnicodeBytes_Check(key) && PyUnicodeBytes_Check(value)) {
 
-                if (str_key && str_value) {
+                    str_key   = PyUnicode_or_PyBytes_asCString(key);
+                    str_value = PyUnicode_or_PyBytes_asCString(value);
 
-                    length = strlen(str_key) + strlen(str_value) + 2;
-                    argument = calloc(length, sizeof(char));
+                    if (str_key && str_value) {
 
-                    if (argument) {
-                        snprintf(argument, length, "%s=%s", str_key, str_value);
-                        db_args[index++] = argument;
+                        length = strlen(str_key) + strlen(str_value) + 2;
+                        argument = calloc(length, sizeof(char));
+
+                        if (argument) {
+                            snprintf(argument, length, "%s=%s", str_key, str_value);
+                            db_args[index++] = argument;
+                        }
                     }
                 }
             }
+
+            db_args[index] = NULL;
         }
     }
 
-    db_args[index] = NULL;
 
     return db_args;
 
@@ -415,7 +422,7 @@ static PyKAdminObject *_kadmin_init_with_password(PyObject *self, PyObject *args
      
     kadm5_config_params *params = calloc(0x1, sizeof(kadm5_config_params));
 
-    if (!PyArg_ParseTuple(args, "zzO!", &client_name, &password, &PyDict_Type, &db_args_dict))
+    if (!PyArg_ParseTuple(args, "zz|O!", &client_name, &password, &PyDict_Type, &db_args_dict))
         return NULL;
 
     db_args = _kadmin_dict_to_db_args(db_args_dict);
