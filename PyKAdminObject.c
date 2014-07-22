@@ -45,13 +45,13 @@ static PyObject *PyKAdminObject_new(PyTypeObject *type, PyObject *args, PyObject
     if (self) {
 
         retval = kadm5_init_krb5_context(&self->context);
-        if (retval != KADM5_OK) { PyKAdmin_RETURN_KADM5_ERROR(retval, "kadm5_init_krb5_context"); }
+        if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_init_krb5_context"); }
 
         self->server_handle = NULL;
 
         // attempt to load the default realm 
         code = krb5_get_default_realm(self->context, &self->realm);
-        if (code) { PyKAdmin_RETURN_KRB5_ERROR(code, "krb5_get_default_realm"); }
+        if (code) { PyKAdmin_RETURN_ERROR(code, "krb5_get_default_realm"); }
 
         self->_storage = PyDict_New();
     }
@@ -79,10 +79,10 @@ static PyObject *PyKAdminObject_delete_principal(PyKAdminObject *self, PyObject 
     if (self->server_handle) {
 
         code = krb5_parse_name(self->context, client_name, &princ);
-        if (code) { PyKAdmin_RETURN_KRB5_ERROR(retval, "krb5_parse_name"); }
+        if (code) { PyKAdmin_RETURN_ERROR(retval, "krb5_parse_name"); }
 
         retval = kadm5_delete_principal(self->server_handle, princ);
-        if (retval != KADM5_OK) { PyKAdmin_RETURN_KADM5_ERROR(retval, "kadm5_delete_principal"); }
+        if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_delete_principal"); }
 
     }
     
@@ -113,10 +113,10 @@ static PyObject *PyKAdminObject_create_principal(PyKAdminObject *self, PyObject 
     if (self->server_handle) {
 
         code = krb5_parse_name(self->context, princ_name, &entry.principal);
-        if (code) { PyKAdmin_RETURN_KRB5_ERROR(retval, "krb5_parse_name"); }
+        if (code) { PyKAdmin_RETURN_ERROR(retval, "krb5_parse_name"); }
 
         retval = kadm5_create_principal(self->server_handle, &entry, KADM5_PRINCIPAL, princ_pass); 
-        if (retval != KADM5_OK) { PyKAdmin_RETURN_KADM5_ERROR(retval, "kadm5_create_principal"); }
+        if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_create_principal"); }
 
     }
 

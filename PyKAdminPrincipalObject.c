@@ -63,6 +63,10 @@ static int PyKAdminPrincipal_init(PyKAdminPrincipalObject *self, PyObject *args,
 }
 
 
+static PyObject *PyKAdminPrincipal_str(PyKAdminPrincipalObject *self) {
+    return NULL;
+}
+
 
 static int PyKAdminPrincipal_print(PyKAdminPrincipalObject *self, FILE *file, int flags){
 
@@ -143,7 +147,7 @@ static PyObject *PyKAdminPrincipal_set_attributes(PyKAdminPrincipalObject *self,
         self->mask |= KADM5_ATTRIBUTES;
 
         //retval = kadm5_modify_principal(self->kadmin->server_handle, &self->entry, KADM5_ATTRIBUTES);
-        //if (retval != KADM5_OK) { PyKAdminError_raise_kadm_error(retval, "kadm5_modify_principal"); return NULL; }
+        //if (retval != KADM5_OK) { PyKAdminError_raise_error(retval, "kadm5_modify_principal"); return NULL; }
     }
 
     Py_RETURN_TRUE;
@@ -174,7 +178,7 @@ static PyObject *PyKAdminPrincipal_commit(PyKAdminPrincipalObject *self) {
     if (self && self->mask) {
 
         retval = kadm5_modify_principal(self->kadmin->server_handle, &self->entry, self->mask);
-        if (retval != KADM5_OK) { PyKAdminError_raise_kadm_error(retval, "kadm5_modify_principal"); } 
+        if (retval != KADM5_OK) { PyKAdminError_raise_error(retval, "kadm5_modify_principal"); } 
 
         self->mask = 0;
     }
@@ -196,11 +200,11 @@ static PyObject *PyKAdminPrincipal_reload(PyKAdminPrincipalObject *self) {
         if (ret) {}
 
         retval = kadm5_free_principal_ent(self->kadmin->server_handle, &self->entry);
-        if (retval != KADM5_OK) { PyKAdminError_raise_kadm_error(retval, "kadm5_free_principal_ent"); } 
+        if (retval != KADM5_OK) { PyKAdminError_raise_error(retval, "kadm5_free_principal_ent"); } 
 
         if (retval == KADM5_OK) {
             retval = kadm5_get_principal(self->kadmin->server_handle, temp, &self->entry, KADM5_PRINCIPAL_NORMAL_MASK);
-            if (retval != KADM5_OK) { PyKAdminError_raise_kadm_error(retval, "kadm5_get_principal"); }
+            if (retval != KADM5_OK) { PyKAdminError_raise_error(retval, "kadm5_get_principal"); }
         }
 
         krb5_free_principal(self->kadmin->context, temp);
@@ -226,7 +230,7 @@ static PyObject *PyKAdminPrincipal_change_password(PyKAdminPrincipalObject *self
         return NULL; 
 
     retval = kadm5_chpass_principal(self->kadmin->server_handle, self->entry.principal, password);
-    if (retval != KADM5_OK) { PyKAdminError_raise_kadm_error(retval, "kadm5_chpass_principal"); return NULL; }
+    if (retval != KADM5_OK) { PyKAdminError_raise_error(retval, "kadm5_chpass_principal"); return NULL; }
 
     Py_RETURN_TRUE;
 }
@@ -236,7 +240,7 @@ static PyObject *PyKAdminPrincipal_randomize_key(PyKAdminPrincipalObject *self) 
     kadm5_ret_t retval = KADM5_OK; 
 
     retval = kadm5_randkey_principal(self->kadmin->server_handle, self->entry.principal, NULL, NULL);
-    if (retval != KADM5_OK) { PyKAdminError_raise_kadm_error(retval, "kadm5_randkey_principal"); return NULL; }
+    if (retval != KADM5_OK) { PyKAdminError_raise_error(retval, "kadm5_randkey_principal"); return NULL; }
 
     Py_RETURN_TRUE;
 }

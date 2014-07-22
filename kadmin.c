@@ -167,6 +167,11 @@ static PyObject *_kadmin_get_option(PyObject *self, PyObject *args, PyObject *kw
     return NULL;
 }
 
+static PyObject *_kadmin_set_option(PyObject *self, PyObject *args, PyObject *kwds) {
+
+    // todo
+    return NULL;
+}
 
 char **_kadmin_dict_to_db_args(PyObject *dict) {
 
@@ -268,7 +273,7 @@ static PyKAdminObject *_kadmin_local(PyObject *self, PyObject *args) {
     if (db_args) 
         _kadmin_free_db_args(db_args);
 
-    if (retval != KADM5_OK) { PyKAdmin_RETURN_KADM5_ERROR(retval, "kadm5_init_with_password.local"); }
+    if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_init_with_password.local"); }
 
     return kadmin;
 
@@ -302,18 +307,18 @@ static PyKAdminObject *_kadmin_init_with_ccache(PyObject *self, PyObject *args) 
 
     if (!ccache_name) {
         code = krb5_cc_default(kadmin->context, &cc);
-        if (code) { PyKAdmin_RETURN_KRB5_ERROR(code, "krb5_cc_default"); }
+        if (code) { PyKAdmin_RETURN_ERROR(code, "krb5_cc_default"); }
     } else {
         code = krb5_cc_resolve(kadmin->context, ccache_name, &cc);
-        if (code) { PyKAdmin_RETURN_KRB5_ERROR(code, "krb5_cc_resolve"); }
+        if (code) { PyKAdmin_RETURN_ERROR(code, "krb5_cc_resolve"); }
     } 
 
     if (!client_name) {
         code = krb5_cc_get_principal(kadmin->context, cc, &princ);
-        if (code) { PyKAdmin_RETURN_KRB5_ERROR(code, "krb5_cc_get_principal"); }
+        if (code) { PyKAdmin_RETURN_ERROR(code, "krb5_cc_get_principal"); }
 
         code = krb5_unparse_name(kadmin->context, princ, &client_name);
-        if (code) { PyKAdmin_RETURN_KRB5_ERROR(code, "krb5_unparse_name"); }
+        if (code) { PyKAdmin_RETURN_ERROR(code, "krb5_unparse_name"); }
 
         krb5_free_principal(kadmin->context, princ);
     }
@@ -332,7 +337,7 @@ static PyKAdminObject *_kadmin_init_with_ccache(PyObject *self, PyObject *args) 
     if (db_args) 
         _kadmin_free_db_args(db_args);
 
-    if (retval != KADM5_OK) { PyKAdmin_RETURN_KADM5_ERROR(retval, "kadm5_init_with_creds"); }
+    if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_init_with_creds"); }
 
     Py_XINCREF(kadmin);
     return kadmin;
@@ -366,10 +371,10 @@ static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) 
     if (client_name == NULL) {
         
         code = krb5_sname_to_principal(kadmin->context, NULL, "host", KRB5_NT_SRV_HST, &princ);
-        if (code) { PyKAdmin_RETURN_KRB5_ERROR(code, "krb5_sname_to_principal"); }
+        if (code) { PyKAdmin_RETURN_ERROR(code, "krb5_sname_to_principal"); }
         
         code = krb5_unparse_name(kadmin->context, princ, &client_name);
-        if (code) { PyKAdmin_RETURN_KRB5_ERROR(code, "krb5_unparse_name"); }
+        if (code) { PyKAdmin_RETURN_ERROR(code, "krb5_unparse_name"); }
 
         krb5_free_principal(kadmin->context, princ);
     }
@@ -389,7 +394,7 @@ static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) 
     if (db_args) 
         _kadmin_free_db_args(db_args);
 
-    if (retval != KADM5_OK) { PyKAdmin_RETURN_KADM5_ERROR(retval, "kadm5_init_with_skey"); }
+    if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_init_with_skey"); }
 
 
 
@@ -429,7 +434,7 @@ static PyKAdminObject *_kadmin_init_with_password(PyObject *self, PyObject *args
     if (db_args) 
         _kadmin_free_db_args(db_args);
 
-    if (retval != KADM5_OK) { PyKAdmin_RETURN_KADM5_ERROR(retval, "kadm5_init_with_password"); }
+    if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_init_with_password"); }
 
     Py_XINCREF(kadmin);
     return kadmin;
