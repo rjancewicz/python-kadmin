@@ -163,7 +163,6 @@ static PyKAdminIterator *PyKAdminObject_principal_iter(PyKAdminObject *self, PyO
         return NULL;
 
     return PyKAdminIterator_principal_iterator(self, match);
-    //PyKAdminIterator_create(self, iterate_principals, match);
 }
 
 
@@ -177,11 +176,42 @@ static PyKAdminIterator *PyKAdminObject_policy_iter(PyKAdminObject *self, PyObje
         return NULL;
 
     return PyKAdminIterator_policy_iterator(self, match);
-    //return PyKAdminIterator_create(self, iterate_policies, match);
 }
 
 
 #ifdef KADMIN_LOCAL
+
+static void _pykadmin_each_encapsulate_error(PyObject **store) {
+
+    PyObject *ptype      = NULL;
+    PyObject *pvalue     = NULL;
+    PyObject *ptraceback = NULL;
+
+    if (PyErr_Occurred()) {
+        PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+        *store = PyTuple_Pack(3, ptype, pvalue, ptraceback);
+    } else {
+        *store = PyExc_RuntimeError;
+    }
+}
+
+static void _pykadmin_each_restore_error(PyObject *store) {
+    
+    if (PyTuple_CheckExact(store)) {
+
+        PyObject *ptype      = PyTuple_GetItem(store, 0);
+        PyObject *pvalue     = PyTuple_GetItem(store, 1);
+        PyObject *ptraceback = PyTuple_GetItem(store, 2);
+
+        PyErr_Restore(ptype, pvalue, ptraceback);
+        Py_DECREF(store);
+
+    } else {
+
+        PyErr_SetString(PyExc_RuntimeError, "Internal Fatal Iteration Exception");
+    }
+}
+
 
 static int kdb_iter_princs(void *data, krb5_db_entry *kdb) {
 
@@ -199,8 +229,7 @@ static int kdb_iter_princs(void *data, krb5_db_entry *kdb) {
             if (self->each_principal.callback) {
 
                 result = PyObject_CallFunctionObjArgs(self->each_principal.callback, principal, self->each_principal.data, NULL);            
-                if (!result) { self->each_principal.error = PyExc_RuntimeError; }
-
+                if (!result) { _pykadmin_each_encapsulate_error(&self->each_principal.error); }
             }
             
             Py_DECREF(principal);
@@ -247,10 +276,13 @@ static PyObject *PyKAdminObject_each_principal(PyKAdminObject *self, PyObject *a
     Py_DECREF(self->each_principal.callback);
     Py_DECREF(self->each_principal.data);
 
-    if (code || self->each_principal.error) {
-        PyErr_SetString(PyExc_RuntimeError, "Fatal Iteration Exception");
+    if (code) { PyKAdmin_RETURN_ERROR(code, "krb5_db_iterate"); }
+
+    if (self->each_principal.error) {
+        _pykadmin_each_restore_error(self->each_principal.error);
         return NULL;
     }
+
 
     Py_RETURN_TRUE;
 
@@ -273,7 +305,7 @@ static void kdb_iter_pols(void *data, osa_policy_ent_rec *entry) {
             if (self->each_policy.callback) {
                 
                 result = PyObject_CallFunctionObjArgs(self->each_policy.callback, policy, self->each_policy.data, NULL);
-                if (!result) { self->each_policy.error = PyExc_RuntimeError; }
+                if (!result) { _pykadmin_each_encapsulate_error(&self->each_policy.error); }
 
             }
             
@@ -315,8 +347,10 @@ static PyObject *PyKAdminObject_each_policy(PyKAdminObject *self, PyObject *args
     Py_DECREF(self->each_policy.callback);
     Py_DECREF(self->each_policy.data);
 
-    if (code || self->each_policy.error) {
-        PyErr_SetString(PyExc_RuntimeError, "Fatal Iteration Exception");
+    if (code) { PyKAdmin_RETURN_ERROR(code, "krb5_db_iter_policy"); }
+
+    if (self->each_policy.error) {
+        _pykadmin_each_restore_error(self->each_policy.error);
         return NULL;
     }
 
