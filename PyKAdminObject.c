@@ -64,6 +64,40 @@ static int PyKAdminObject_init(PyKAdminObject *self, PyObject *args, PyObject *k
     return 0;
 }
 
+
+static PyObject *PyKAdminObject_principal_exists(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
+
+    kadm5_ret_t retval = KADM5_OK;
+    krb5_error_code code = 0;
+    krb5_principal princ = NULL;
+
+    char *client_name = NULL;
+    PyObject *result = NULL;
+
+    kadm5_principal_ent_rec entry;
+
+    if (!PyArg_ParseTuple(args, "s", &client_name))
+        return NULL;
+
+    if (self->server_handle) {
+
+        code = krb5_parse_name(self->context, client_name, &princ);
+        if (code) { PyKAdmin_RETURN_ERROR(retval, "krb5_parse_name"); }
+
+        retval = kadm5_get_principal(self->server_handle, princ, &entry, KADM5_PRINCIPAL);
+        if (retval == KADM5_OK) { result = Py_True; }
+        else if (retval == KADM5_UNK_PRINC) { result = Py_False; }
+        else { PyKAdmin_RETURN_ERROR(retval, "kadm5_delete_principal"); }
+    }
+    
+    krb5_free_principal(self->context, princ);
+    kadm5_free_principal_ent(self->server_handle, &entry);
+
+    Py_XINCREF(result);
+    return result;
+
+}
+
 static PyObject *PyKAdminObject_delete_principal(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
 
     
@@ -367,6 +401,8 @@ static PyMethodDef PyKAdminObject_methods[] = {
 
     {"delprinc",            (PyCFunction)PyKAdminObject_delete_principal, METH_VARARGS, ""},
     {"delete_principal",    (PyCFunction)PyKAdminObject_delete_principal, METH_VARARGS, ""},
+
+    {"principal_exists",    (PyCFunction)PyKAdminObject_principal_exists, METH_VARARGS, ""},
 
     // kadmin modify princ, rename princ 
 
