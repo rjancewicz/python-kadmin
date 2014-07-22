@@ -30,39 +30,30 @@ static void PyKAdminObject_dealloc(PyKAdminObject *self) {
             free(self->realm);
         }
 
-        //self->ob_type->tp_free((PyObject*)self);
         Py_TYPE(self)->tp_free((PyObject *)self);
     }
 }
     
 static PyObject *PyKAdminObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
 
-    PyKAdminObject *self; 
-    kadm5_ret_t retval = 0;
+    PyKAdminObject *self = NULL;
+    kadm5_ret_t retval   = KADM5_OK;
+    krb5_error_code code = 0;
 
     self = (PyKAdminObject *)type->tp_alloc(type, 0);
 
     if (self) {
-        retval = kadm5_init_krb5_context(&self->context);
-        // retval = krb5_init_context(&self->context);
 
-        if (retval) {
-            Py_DECREF(self);
-            PyKAdminError_raise_kadm_error(retval, "kadm5_init_with_password");
-            return NULL;
-        }
+        retval = kadm5_init_krb5_context(&self->context);
+        if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_init_krb5_context"); }
 
         self->server_handle = NULL;
 
-        // attempt to load the default realm for this connection
-        //krb5_get_default_realm(self->context, &self->realm);
-        //if (!self->realm) {
-        //    // todo : fail 
-        //}
+        // attempt to load the default realm 
+        code = krb5_get_default_realm(self->context, &self->realm);
+        if (code) { PyKAdmin_RETURN_ERROR(code, "krb5_get_default_realm"); }
 
         self->_storage = PyDict_New();
-
-        
     }
 
     return (PyObject *)self;    
@@ -76,8 +67,8 @@ static int PyKAdminObject_init(PyKAdminObject *self, PyObject *args, PyObject *k
 static PyObject *PyKAdminObject_delete_principal(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
 
     
-    kadm5_ret_t retval;
-    krb5_error_code errno;
+    kadm5_ret_t retval = KADM5_OK;
+    krb5_error_code code = 0;
     krb5_principal princ = NULL;
 
     char *client_name = NULL;
@@ -87,11 +78,11 @@ static PyObject *PyKAdminObject_delete_principal(PyKAdminObject *self, PyObject 
 
     if (self->server_handle) {
 
-        retval = krb5_parse_name(self->context, client_name, &princ);
-        if (retval != 0x0) { PyKAdminError_raise_kadm_error(retval, "krb5_parse_name"); return NULL; }
+        code = krb5_parse_name(self->context, client_name, &princ);
+        if (code) { PyKAdmin_RETURN_ERROR(retval, "krb5_parse_name"); }
 
         retval = kadm5_delete_principal(self->server_handle, princ);
-        if (retval != 0x0) { PyKAdminError_raise_kadm_error(retval, "kadm5_delete_principal"); return NULL; }
+        if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_delete_principal"); }
 
     }
     
@@ -104,11 +95,8 @@ static PyObject *PyKAdminObject_delete_principal(PyKAdminObject *self, PyObject 
 
 static PyObject *PyKAdminObject_create_principal(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
 
-    //PyObject *result = NULL;
-
-    kadm5_ret_t retval;
-    krb5_error_code errno;
-
+    kadm5_ret_t retval   = KADM5_OK;
+    krb5_error_code code = 0;
     char *princ_name = NULL;
     char *princ_pass = NULL;
 
@@ -116,23 +104,20 @@ static PyObject *PyKAdminObject_create_principal(PyKAdminObject *self, PyObject 
     
     memset(&entry, 0, sizeof(entry));
     entry.attributes = 0;
+
+    // todo set default attributes.
     
     if (!PyArg_ParseTuple(args, "s|z", &princ_name, &princ_pass))
         return NULL;
 
     if (self->server_handle) {
 
-        if ( (errno = krb5_parse_name(self->context, princ_name, &entry.principal) ) ) {
+        code = krb5_parse_name(self->context, princ_name, &entry.principal);
+        if (code) { PyKAdmin_RETURN_ERROR(retval, "krb5_parse_name"); }
 
-            printf("Error: krb5_unparse_name [%d]\n", errno);
-            return NULL; 
-        
-        } else {
+        retval = kadm5_create_principal(self->server_handle, &entry, KADM5_PRINCIPAL, princ_pass); 
+        if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_create_principal"); }
 
-            retval = kadm5_create_principal(self->server_handle, &entry, KADM5_PRINCIPAL, princ_pass); 
-            
-            if (retval != 0x0) { PyKAdminError_raise_kadm_error(retval, "kadm5_create_principal"); return NULL; }
-        }
     }
 
     kadm5_free_principal_ent(self->server_handle, &entry);
@@ -146,14 +131,10 @@ static PyKAdminPrincipalObject *PyKAdminObject_get_principal(PyKAdminObject *sel
     PyKAdminPrincipalObject *principal = NULL;
     char *client_name = NULL;
 
-    if (!PyArg_ParseTuple(args, "s", &client_name)) {
+    if (!PyArg_ParseTuple(args, "s", &client_name))
         return NULL;
-    }
 
-    if (self) {
-        principal = PyKAdminPrincipalObject_principal_with_name(self, client_name);
-
-    } 
+    principal = PyKAdminPrincipalObject_principal_with_name(self, client_name);
 
     return principal;
 }
@@ -166,10 +147,8 @@ static PyKAdminPolicyObject *PyKAdminObject_get_policy(PyKAdminObject *self, PyO
     if (!PyArg_ParseTuple(args, "s", &policy_name))
         return NULL;
 
-    if (self->server_handle) {
-        policy = PyKAdminPolicyObject_policy_with_name(self, policy_name);
-    } 
-
+    policy = PyKAdminPolicyObject_policy_with_name(self, policy_name);
+    
     return policy;
 }
 
@@ -177,30 +156,28 @@ static PyKAdminPolicyObject *PyKAdminObject_get_policy(PyKAdminObject *self, PyO
 static PyKAdminIterator *PyKAdminObject_principal_iter(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
 
     char *match = NULL;
-    PyObject *unpack = Py_False; 
-    PyKadminIteratorModes mode = iterate_principals;
 
-    static char *kwlist[] = {"match", "unpack", NULL};
+    static char *kwlist[] = {"match", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|zO", kwlist, &match, &unpack))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|z", kwlist, &match))
         return NULL;
 
-    return PyKAdminIterator_create(self, mode, match);
+    return PyKAdminIterator_principal_iterator(self, match);
+    //PyKAdminIterator_create(self, iterate_principals, match);
 }
 
 
 static PyKAdminIterator *PyKAdminObject_policy_iter(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
 
     char *match = NULL;
-    PyObject *unpack = Py_False; 
-    PyKadminIteratorModes mode = iterate_policies;
 
-    static char *kwlist[] = {"match", "unpack", NULL};
+    static char *kwlist[] = {"match", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|zO", kwlist, &match, &unpack))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|z", kwlist, &match))
         return NULL;
 
-    return PyKAdminIterator_create(self, mode, match);
+    return PyKAdminIterator_policy_iterator(self, match);
+    //return PyKAdminIterator_create(self, iterate_policies, match);
 }
 
 
@@ -210,28 +187,24 @@ static int kdb_iter_princs(void *data, krb5_db_entry *kdb) {
 
     PyKAdminObject *self = (PyKAdminObject *)data;
 
+    PyKAdminPrincipalObject *principal = NULL;
     PyObject *result = NULL;
-    //PyObject *args   = NULL;
 
-    PyKAdminPrincipalObject *principal = PyKAdminPrincipalObject_principal_with_db_entry(self, kdb);
+    if (!self->each_principal.error) {
 
-    if (principal) {
+        principal = PyKAdminPrincipalObject_principal_with_db_entry(self, kdb);
 
-        if (self->each_principal.callback) {
+        if (principal) {
 
-            //args = PyTuple_Pack(2, principal, self->each_principal.data);
-            
-            //result = PyObject_Call(self->each_principal.callback, args, NULL);
-            result = PyObject_CallFunctionObjArgs(self->each_principal.callback, principal, self->each_principal.data, NULL);
-            
-            //Py_DECREF(args);
+            if (self->each_principal.callback) {
 
-            if (!result) {
-                // use self to hold exception 
+                result = PyObject_CallFunctionObjArgs(self->each_principal.callback, principal, self->each_principal.data, NULL);            
+                if (!result) { self->each_principal.error = PyExc_RuntimeError; }
+
             }
-
+            
+            Py_DECREF(principal);
         }
-        PyKAdminPrincipalObject_destroy(principal);
     }
 
     return 0;
@@ -243,43 +216,39 @@ static int kdb_iter_princs(void *data, krb5_db_entry *kdb) {
 static PyObject *PyKAdminObject_each_principal(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
 
     char *match = NULL;
-    krb5_error_code retval = 0; 
-    kadm5_ret_t lock = 0; 
+    krb5_error_code code = 0; 
+    kadm5_ret_t lock = KADM5_OK; 
 
-
-    static char *kwlist[] = {"", "data", "match", NULL};
+    static char *kwlist[] = {"callback", "data", "match", NULL};
     
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|Oz", kwlist, /*&PyFunction_Type,*/ &self->each_principal.callback, &self->each_principal.data, &match))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|Oz", kwlist, &PyFunction_Type, &self->each_principal.callback, &self->each_principal.data, &match))
         return NULL;
 
     if (!self->each_principal.data)
         self->each_principal.data = Py_None;
 
+    self->each_principal.error = NULL;
 
-
-    Py_XINCREF(self->each_principal.callback);
-    Py_XINCREF(self->each_principal.data);
+    Py_INCREF(self->each_principal.callback);
+    Py_INCREF(self->each_principal.data);
     
-
-
     lock = kadm5_lock(self->server_handle);
 
-    if (!lock || (lock == KRB5_PLUGIN_OP_NOTSUPP)) {
+    if ((lock == KADM5_OK) || (lock == KRB5_PLUGIN_OP_NOTSUPP)) {
 
         krb5_clear_error_message(self->context);
 
-        retval = krb5_db_iterate(self->context, match, kdb_iter_princs, (void *)self);
+        code = krb5_db_iterate(self->context, match, kdb_iter_princs, (void *)self);
     
-        if (lock != KRB5_PLUGIN_OP_NOTSUPP) {     
+        if (lock != KRB5_PLUGIN_OP_NOTSUPP)   
             lock = kadm5_unlock(self->server_handle);
-        }
     }
 
-    Py_XDECREF(self->each_principal.callback);
-    Py_XDECREF(self->each_principal.data);
+    Py_DECREF(self->each_principal.callback);
+    Py_DECREF(self->each_principal.data);
 
-    if (retval) {
-        // TODO raise proper exception
+    if (code || self->each_principal.error) {
+        PyErr_SetString(PyExc_RuntimeError, "Fatal Iteration Exception");
         return NULL;
     }
 
@@ -292,32 +261,33 @@ static PyObject *PyKAdminObject_each_principal(PyKAdminObject *self, PyObject *a
 static void kdb_iter_pols(void *data, osa_policy_ent_rec *entry) {
 
     PyKAdminObject *self = (PyKAdminObject *)data;
-
+    PyKAdminPolicyObject *policy = NULL;
     PyObject *result = NULL;
 
-    PyKAdminPolicyObject *policy = PyKAdminPolicyObject_policy_with_osa_entry(self, entry);
+    if (!self->each_policy.error) {
 
-    if (policy) {
+        policy = PyKAdminPolicyObject_policy_with_osa_entry(self, entry);
 
-        if (self->each_policy.callback) {
-            
-            result = PyObject_CallFunctionObjArgs(self->each_policy.callback, policy, self->each_policy.data, NULL);
-            
-            if (!result) {
-                // use self to hold exception 
+        if (policy) {
+
+            if (self->each_policy.callback) {
+                
+                result = PyObject_CallFunctionObjArgs(self->each_policy.callback, policy, self->each_policy.data, NULL);
+                if (!result) { self->each_policy.error = PyExc_RuntimeError; }
+
             }
-
+            
+            Py_DECREF(policy);
         }
-        PyKAdminPolicyObject_destroy(policy);
-    }
+    }   
 }
 
 
 static PyObject *PyKAdminObject_each_policy(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
     
     char *match = NULL;
-    krb5_error_code retval = 0; 
-    kadm5_ret_t lock = 0; 
+    krb5_error_code code = 0; 
+    kadm5_ret_t lock = KADM5_OK; 
 
     static char *kwlist[] = {"", "data", "match", NULL};
     
@@ -327,27 +297,26 @@ static PyObject *PyKAdminObject_each_policy(PyKAdminObject *self, PyObject *args
     if (!self->each_policy.data)
         self->each_policy.data = Py_None;
 
-    Py_XINCREF(self->each_policy.callback);
-    Py_XINCREF(self->each_policy.data);
+    Py_INCREF(self->each_policy.callback);
+    Py_INCREF(self->each_policy.data);
     
     lock = kadm5_lock(self->server_handle);
 
-    if (!lock || (lock == KRB5_PLUGIN_OP_NOTSUPP)) {
+    if ((lock == KADM5_OK) || (lock == KRB5_PLUGIN_OP_NOTSUPP)) {
 
         krb5_clear_error_message(self->context);
 
-        retval = krb5_db_iter_policy(self->context, match, kdb_iter_pols, (void *)self);
+        code = krb5_db_iter_policy(self->context, match, kdb_iter_pols, (void *)self);
     
-        if (lock != KRB5_PLUGIN_OP_NOTSUPP) {     
+        if (lock != KRB5_PLUGIN_OP_NOTSUPP)
             lock = kadm5_unlock(self->server_handle);
-        }
     }
 
-    Py_XDECREF(self->each_policy.callback);
-    Py_XDECREF(self->each_policy.data);
+    Py_DECREF(self->each_policy.callback);
+    Py_DECREF(self->each_policy.data);
 
-    if (retval) {
-        // TODO raise proper exception
+    if (code || self->each_policy.error) {
+        PyErr_SetString(PyExc_RuntimeError, "Fatal Iteration Exception");
         return NULL;
     }
 
@@ -355,7 +324,6 @@ static PyObject *PyKAdminObject_each_policy(PyKAdminObject *self, PyObject *args
 
 }
 #endif
-
 
 static PyMethodDef PyKAdminObject_methods[] = {
 
@@ -370,8 +338,6 @@ static PyMethodDef PyKAdminObject_methods[] = {
 
     {"getprinc",            (PyCFunction)PyKAdminObject_get_principal,    METH_VARARGS, ""},
     {"get_principal",       (PyCFunction)PyKAdminObject_get_principal,    METH_VARARGS, ""},
-
-
     
     {"getpol",              (PyCFunction)PyKAdminObject_get_policy,       METH_VARARGS, ""},
     {"get_policy",          (PyCFunction)PyKAdminObject_get_policy,       METH_VARARGS, ""},
