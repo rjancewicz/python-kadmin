@@ -31,9 +31,20 @@ def create_test_prinicipal():
 
     if not os.path.isfile(TEST_KEYTAB):
 
-        #kadmin_local = subprocess.Popen(['kadmin.local'], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        command = '''
+spawn kadmin.local -p root@EXAMPLE.COM
 
-        pass
+expect "kadmin.local:" { send "ank test/admin@EXAMPLE.COM\r" }
+expect "Enter password for principal" { send "example\r" }
+expect "Re-enter password for principal" { send "example\r" }
+expect "kadmin.local:" { send "ktadd -kt ./test.keytab test/admin@EXAMPLE.COM\r"}
+expect "kadmin.local:" { exit 1 }
+'''
+
+        expect = subprocess.Popen(['expect'], shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        expect.communicate(command.encode())
+        expect.wait()
 
 
 def create_ccache():
