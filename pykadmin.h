@@ -21,8 +21,8 @@ struct module_state {
 # 	define PyUnifiedLongInt_FromLong(from) PyLong_FromLong((long) from)
 #	define PyUnifiedLongInt_AsUnsignedLong(ob) PyLong_AsUnsignedLong((PyObject *)ob)
 #else 
-	static struct module_state _state;
-#	define GETSTATE(m) (&_state)
+    static struct module_state _state;
+#   define GETSTATE(m) (&_state)
 # 	define PyUnifiedLongInt_FromLong(from) PyInt_FromLong((long) from)
 #	define PyUnifiedLongInt_AsUnsignedLong(ob) PyInt_AsUnsignedLongMask((PyObject *)ob)
 #endif
@@ -31,5 +31,6 @@ struct module_state {
 #	define Py_TYPE(ob) (((PyObject*)(ob))->ob_type)
 #endif
 
+#define PyUnicodeBytes_Check(obj) (PyUnicode_CheckExact(obj) || PyBytes_CheckExact(obj))
 
 #endif

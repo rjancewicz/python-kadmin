@@ -20,7 +20,6 @@
 #	define PyDateTime_DELTA_GET_MICROSECONDS(o) (((PyDateTime_Delta*)o)->microseconds)
 #endif
 
-#define PyUnicodeBytes_Check(obj) (PyUnicode_CheckExact(obj) || PyBytes_CheckExact(obj))
 
 inline char *PyUnicode_or_PyBytes_asCString(PyObject *in_str);
 

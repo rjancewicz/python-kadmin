@@ -12,6 +12,7 @@
 typedef struct {
 	PyObject *callback;
 	PyObject *data;
+    PyObject *error;
 } each_iteration_t; 
 
 typedef struct {

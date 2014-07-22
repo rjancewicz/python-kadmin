@@ -30,7 +30,6 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_name(PyKAdminObj
 PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_db_entry(PyKAdminObject *kadmin, krb5_db_entry *kdb);
 PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_kadm_entry(PyKAdminObject *kadmin, kadm5_principal_ent_rec *entry);
 
-PyObject *PyKAdminPrincipalObject_modify_principal(PyKAdminPrincipalObject *princ, PyObject *args, PyObject *kwds)
 
 void PyKAdminPrincipalObject_destroy(PyKAdminPrincipalObject *self); 
 

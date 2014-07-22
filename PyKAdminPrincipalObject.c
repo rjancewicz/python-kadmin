@@ -868,12 +868,6 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_db_entry(PyKAdmi
     return principal;
 }
 
-PyObject *PyKAdminPrincipalObject_modify_principal(PyKAdminPrincipalObject *princ, PyObject *args, PyObject *kwds) {
-
-    return PyKAdminPrincipal_modify(princ, args, kwds);
-
-}
-
 
 void PyKAdminPrincipalObject_destroy(PyKAdminPrincipalObject *self) {
     PyKAdminPrincipal_dealloc(self);

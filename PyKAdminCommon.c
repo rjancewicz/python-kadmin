@@ -24,11 +24,12 @@ inline char *PyUnicode_or_PyBytes_asCString(PyObject *in_str) {
         PyObject *ascii = PyUnicode_AsASCIIString(in_str);
 
         if (ascii) {
-            out_str = PyBytes_AsString(in_str);
+            out_str = PyBytes_AsString(ascii);
             Py_XDECREF(ascii);
         }
 
     } else if (PyBytes_CheckExact(in_str)) {
+        
         out_str = PyBytes_AsString(in_str);
     }
 
