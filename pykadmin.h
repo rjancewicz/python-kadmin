@@ -2,6 +2,7 @@
 #define PYKADMIN_H
 
 #include <Python.h>
+#include <datetime.h>
 #include <patchlevel.h>
 
 struct module_state {
