@@ -116,6 +116,8 @@ PyKADMIN_INIT_FUNC {
 
     // initialize the module's class object types
 
+    PyDateTime_IMPORT;
+
     if (PyType_Ready(&PyKAdminObject_Type) < 0) 
         PyModule_RETURN_ERROR;
 
