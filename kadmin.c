@@ -189,9 +189,9 @@ char **_kadmin_dict_to_db_args(PyObject *dict) {
     Py_ssize_t index  = 0;
     Py_ssize_t position  = 0;
 
-    Py_ssize_t length = PyDict_Size(dict) + 1;
+    if (dict) {    
 
-    if (dict) {
+        Py_ssize_t length = PyDict_Size(dict) + 1;
 
         db_args = calloc(length, sizeof(intptr_t));
 
@@ -256,7 +256,8 @@ static PyKAdminObject *_kadmin_local(PyObject *self, PyObject *args) {
     if (!PyArg_ParseTuple(args, "|O!", &PyDict_Type, &db_args_dict))
         return NULL; 
 
-    db_args = _kadmin_dict_to_db_args(db_args_dict);
+    if (db_args_dict)
+        db_args = _kadmin_dict_to_db_args(db_args_dict);
 
     kadm5_config_params *params = calloc(0x1, sizeof(kadm5_config_params));
 
