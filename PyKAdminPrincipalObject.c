@@ -12,6 +12,9 @@
 
 #define TIME_NONE ((time_t) -1)
 
+
+static PyObject *PyKAdminPrincipal_get_keys(PyKAdminPrincipalObject *self, void *closure);
+
 static char kNEVER[] = "never";
 
 static const unsigned int kFLAG_MAX =
@@ -68,12 +71,55 @@ static PyObject *PyKAdminPrincipal_str(PyKAdminPrincipalObject *self) {
 }
 
 
+static void _PyKAdminPrincipal_print_keys(PyKAdminPrincipalObject *self, FILE *file, int flags) {
+
+    PyObject *keys = PyKAdminPrincipal_get_keys(self, NULL);
+
+    PyObject *kvno;
+    PyObject *value;
+    PyObject *tuple;
+    PyObject *enctype;
+    PyObject *salttype;
+
+    ssize_t pos = 0;
+    ssize_t index = 0; 
+
+    if (keys) {
+
+        while (PyDict_Next(keys, &pos, &kvno, &value)) {
+
+            if (PyList_Check(value)) {
+
+                for (index = 0; index < PyList_Size(value); index++) {
+
+                    tuple = PyList_GetItem(value, index);
+
+                    if (PyTuple_Check(tuple)) {
+
+                        if (PyTuple_Size(tuple) == 2) {
+
+                            enctype = PyTuple_GetItem(tuple, 0);
+                            salttype = PyTuple_GetItem(tuple, 1);
+
+                            fprintf(file, "Key: vno %ld, %s, %s\n", PyUnifiedLongInt_AsLong(kvno), PyUnicode_or_PyBytes_asCString(enctype), PyUnicode_or_PyBytes_asCString(salttype));
+
+                        }
+                    }
+                }
+            }
+        }
+
+        Py_DECREF(keys);
+    }
+
+}
+
 static int PyKAdminPrincipal_print(PyKAdminPrincipalObject *self, FILE *file, int flags){
 
     static char kNEVER_DATE[] = "[never]";
     static char kNONE_DATE[]  = "[none]";
 
-    static const char *kPRINT_FORMAT = "%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %d\n%s: %s\n%s: %s";
+    //static const char *kPRINT_FORMAT = "%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %s\n%s: %d\n%s: %d\n%s: %s";
 
     krb5_error_code errno;
     char *client_name = NULL;
@@ -100,20 +146,23 @@ static int PyKAdminPrincipal_print(PyKAdminPrincipalObject *self, FILE *file, in
         maxlife  = pykadmin_timestamp_as_deltastr(self->entry.max_life, kNONE_DATE);
         maxrlife = pykadmin_timestamp_as_deltastr(self->entry.max_renewable_life, kNONE_DATE);
 
-        fprintf(file, kPRINT_FORMAT, 
-            "Principal",                      client_name,
-            "Expiration date",                expire,
-            "Last password change",           pwchange,
-            "Password expiration date",       pwexpire,
-            "Maximum ticket life",            maxlife,
-            "Maximum renewable life",         maxrlife,
-            "Last modified",                  moddate,
-            "Last successful authentication", success,
-            "Last failed authentication",     failure,
-            "Failed password attempts",       self->entry.fail_auth_count,
-            "Number of keys",                 "(TODO)",
-            "Policy",                         self->entry.policy ? self->entry.policy : kNONE_DATE
-            );
+        //fprintf(file, kPRINT_FORMAT, 
+        fprintf(file, "Principal: %s\n",                      client_name);
+        fprintf(file, "Expiration date: %s\n",                expire);
+        fprintf(file, "Last password change: %s\n",           pwchange);
+        fprintf(file, "Password expiration date: %s\n",       pwexpire);
+        fprintf(file, "Maximum ticket life: %s\n",            maxlife);
+        fprintf(file, "Maximum renewable life: %s\n",         maxrlife);
+        fprintf(file, "Last modified: %s\n",                  moddate);
+        fprintf(file, "Last successful authentication: %s\n", success);
+        fprintf(file, "Last failed authentication: %s\n",     failure);
+        fprintf(file, "Failed password attempts: %d\n",       self->entry.fail_auth_count);
+        fprintf(file, "Number of keys: %d\n",                 self->entry.n_key_data);
+
+        _PyKAdminPrincipal_print_keys(self, file, flags);
+
+        fprintf(file, "Policy: %s", self->entry.policy ? self->entry.policy : kNONE_DATE );
+
     }
 
     if (client_name) { free(client_name); }
@@ -406,6 +455,89 @@ static PyObject *PyKAdminPrincipal_get_kvno(PyKAdminPrincipalObject *self, void 
 
     Py_XINCREF(result);
     return result;
+}
+
+
+
+PyObject *pykadmin_key_enctype_name(krb5_key_data *key_data) {
+
+    PyObject *enctype = NULL;
+    // make sure this is enough. 
+    char buffer[1024];
+
+    if (krb5_enctype_to_name(key_data->key_data_type[0], FALSE, buffer, sizeof(buffer)))
+        snprintf(buffer, sizeof(buffer), "<Encryption type 0x%x>", key_data->key_data_type[0]);
+
+    enctype = PyUnicode_FromString(buffer);
+
+    return enctype;
+}
+
+PyObject *pykadmin_key_salttype_name(krb5_key_data *key_data) {
+
+    PyObject *salttype = NULL;
+    // make sure this is enough. 
+    char buffer[1024];
+
+    if (krb5_salttype_to_string(key_data->key_data_type[1], buffer, sizeof(buffer)))
+        snprintf(buffer, sizeof(buffer), "<Salt type 0x%x>", key_data->key_data_type[0]);
+
+    salttype = PyUnicode_FromString(buffer);
+
+    return salttype;
+}
+
+static PyObject *PyKAdminPrincipal_get_keys(PyKAdminPrincipalObject *self, void *closure) { 
+
+    /*
+
+    key structure:
+
+        {
+            kvno: [("enctype", "salt"), ("enctype", "salt")],
+            kvno: ...
+        }
+
+    */
+
+    PyObject *kvno     = NULL;
+    PyObject *enctype  = NULL;
+    PyObject *salttype = NULL;
+    PyObject *tuple    = NULL;
+    PyObject *list     = NULL;
+
+    PyObject *keys = PyDict_New();
+
+    ssize_t index = 0; 
+
+    for (; index < self->entry.n_key_data; index++) {
+
+        krb5_key_data *key_data = &self->entry.key_data[index];
+
+        kvno = PyUnifiedLongInt_FromLong(key_data->key_data_kvno);
+
+        enctype  = pykadmin_key_enctype_name(key_data);
+        salttype = pykadmin_key_salttype_name(key_data);
+
+        tuple = PyTuple_Pack(2, enctype, salttype);
+
+
+        if (kvno) {
+            if (PyDict_Contains(keys, kvno)) {
+                list = PyDict_GetItem(keys, kvno);
+            } else {
+                list = PyList_New(0);
+                PyDict_SetItem(keys, kvno, list);
+            }
+        }
+
+        if (list && tuple) {
+            PyList_Append(list, tuple);
+        }
+
+    }
+
+    return keys;
 }
 
 
@@ -747,6 +879,7 @@ static PyGetSetDef PyKAdminPrincipal_getters_setters[] = {
 
     {"attributes",      (getter)PyKAdminPrincipal_get_attributes,      NULL, kDOCSTRING_ATTRIBUTES,      NULL},
 
+    {"keys",            (getter)PyKAdminPrincipal_get_keys,            NULL, "",                         NULL},
 
     // setter attributes
 
@@ -833,7 +966,7 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_name(PyKAdminObj
             principal->kadmin = kadmin;
 
             errno = krb5_parse_name(kadmin->context, client_name, &temp);
-            retval = kadm5_get_principal(kadmin->server_handle, temp, &principal->entry, KADM5_PRINCIPAL_NORMAL_MASK);
+            retval = kadm5_get_principal(kadmin->server_handle, temp, &principal->entry, (KADM5_PRINCIPAL_NORMAL_MASK | KADM5_KEY_DATA));
 
             krb5_free_principal(kadmin->context, temp);
 
@@ -860,7 +993,7 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_db_entry(PyKAdmi
         Py_INCREF(kadmin);
         principal->kadmin = kadmin;
 
-        retval = pykadmin_kadm_from_kdb(kadmin, kdb, &principal->entry, KADM5_PRINCIPAL_NORMAL_MASK);
+        retval = pykadmin_kadm_from_kdb(kadmin, kdb, &principal->entry, (KADM5_PRINCIPAL_NORMAL_MASK | KADM5_KEY_DATA));
 
         if (retval) {
             PyKAdminPrincipal_dealloc(principal);

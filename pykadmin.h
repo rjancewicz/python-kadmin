@@ -20,10 +20,12 @@ struct module_state {
 #	define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
 # 	define PyUnifiedLongInt_FromLong(from) PyLong_FromLong((long) from)
 #	define PyUnifiedLongInt_AsUnsignedLong(ob) PyLong_AsUnsignedLong((PyObject *)ob)
+#	define PyUnifiedLongInt_AsLong(ob) PyLong_AsLong((PyObject *)ob)
 #else 
 #   define GETSTATE(m) (&_state)    
 # 	define PyUnifiedLongInt_FromLong(from) PyInt_FromLong((long) from)
 #	define PyUnifiedLongInt_AsUnsignedLong(ob) PyInt_AsUnsignedLongMask((PyObject *)ob)
+#	define PyUnifiedLongInt_AsLong(ob) PyInt_AsLong((PyObject *)ob)
 #endif
 
 #ifndef Py_TYPE
