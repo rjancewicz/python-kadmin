@@ -12,7 +12,7 @@
 
 #include "pykadmin.h"
 
-#define PyKAdmin_RETURN_ERROR(value, caller) { PyKAdminError_raise_error((long)value, caller); return NULL; }
+#define PyKAdmin_RETURN_ERROR(value, caller) { PyKAdminError_raise_error((long)value, caller); has_error=1; goto epilog; }
 
 //#define PyKAdmin_RETURN_KADM5_ERROR(retval, caller) { PyKAdminError_raise_kadm_error(retval, caller); return NULL; }
 //#define PyKAdmin_RETURN_KRB5_ERROR(code, caller) { PyKAdminError_raise_krb5_error(code, caller); return NULL; }
