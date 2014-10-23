@@ -126,6 +126,94 @@ static PyObject *PyKAdminObject_delete_principal(PyKAdminObject *self, PyObject 
 
 }
 
+/******************************************************************************
+ add_tl_data
+ free_tl_data
+     these functions come from the KRB5 code base
+ ******************************************************************************/
+
+static void
+free_tl_data(krb5_int16 *n_tl_datap, krb5_tl_data **tl_datap)
+{
+    krb5_tl_data *tl_data = *tl_datap, *next;
+    int n_tl_data = *n_tl_datap;
+    int i;
+
+    *n_tl_datap = 0;
+    *tl_datap = NULL;
+
+    for (i = 0; tl_data && (i < n_tl_data); i++) {
+        next = tl_data->tl_data_next;
+        free(tl_data->tl_data_contents);
+        free(tl_data);
+        tl_data = next;
+    }
+}
+
+/* Construct a tl_data element and add it to the tail of *tl_datap. */
+static int
+add_tl_data(krb5_int16 *n_tl_datap, krb5_tl_data **tl_datap,
+            krb5_int16 tl_type, krb5_ui_2 len, krb5_octet *contents)
+{
+    krb5_tl_data *tl_data;
+    krb5_octet *copy;
+
+    copy = malloc(len);
+    tl_data = calloc(1, sizeof(*tl_data));
+    if (copy == NULL || tl_data == NULL) {
+      PyErr_SetString(PyExc_RuntimeError, "Not enough memory");
+      return 1;
+    }
+    memcpy(copy, contents, len);
+
+    tl_data->tl_data_type = tl_type;
+    tl_data->tl_data_length = len;
+    tl_data->tl_data_contents = copy;
+    tl_data->tl_data_next = NULL;
+
+    for (; *tl_datap != NULL; tl_datap = &(*tl_datap)->tl_data_next);
+    *tl_datap = tl_data;
+    (*n_tl_datap)++;
+    return 0;
+}
+
+static int
+process_principal_x_arg(kadm5_principal_ent_rec *entry, PyObject *arg, long *mask)
+{
+  if (PyUnicode_Check(arg)) {
+    const char* data = PyUnicode_AS_DATA(arg);
+    add_tl_data(&entry->n_tl_data, &entry->tl_data,
+		KRB5_TL_DB_ARGS, strlen(data)+1,
+		(krb5_octet*) data);
+    *mask |= KADM5_TL_DATA;
+  }
+  else if (PyString_Check(arg)) {
+    char* data = PyString_AS_STRING(arg);
+    add_tl_data(&entry->n_tl_data, &entry->tl_data,
+		KRB5_TL_DB_ARGS, strlen(data)+1,
+		(krb5_octet*) data);
+    *mask |= KADM5_TL_DATA;
+  }
+  else if (PySequence_Check(arg)) {
+    int n = PySequence_Length(arg);
+    int i;
+    for (i=0; i<n; ++i) {
+      PyObject* e = PySequence_GetItem(arg, i);
+      process_principal_x_arg(entry, e, mask);
+    }
+  }
+  return 0;
+}
+
+static int
+process_principal_kwargs(kadm5_principal_ent_rec *entry, PyObject *kwargs, long* mask) {
+  if (! PyMapping_Check(kwargs)) return 0;
+  if (PyMapping_HasKeyString(kwargs, "x")) {
+    PyObject* val = PyMapping_GetItemString(kwargs, "x");
+    process_principal_x_arg(entry, val, mask);
+  }
+  return 0;
+}
 
 static PyObject *PyKAdminObject_create_principal(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
 
@@ -133,6 +221,8 @@ static PyObject *PyKAdminObject_create_principal(PyKAdminObject *self, PyObject 
     krb5_error_code code = 0;
     char *princ_name = NULL;
     char *princ_pass = NULL;
+    long mask = KADM5_PRINCIPAL;
+    int has_error = 0;
 
     kadm5_principal_ent_rec entry;
     
@@ -144,18 +234,31 @@ static PyObject *PyKAdminObject_create_principal(PyKAdminObject *self, PyObject 
     if (!PyArg_ParseTuple(args, "s|z", &princ_name, &princ_pass))
         return NULL;
 
+    process_principal_kwargs(&entry, kwds, &mask);
+
     if (self->server_handle) {
 
         code = krb5_parse_name(self->context, princ_name, &entry.principal);
-        if (code) { PyKAdmin_RETURN_ERROR(retval, "krb5_parse_name"); }
+        if (code) {
+	  PyKAdminError_raise_error((long)retval, "krb5_parse_name");
+	  has_error = 1;
+	  goto epilog;
+	}
 
-        retval = kadm5_create_principal(self->server_handle, &entry, KADM5_PRINCIPAL, princ_pass); 
-        if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_create_principal"); }
+        retval = kadm5_create_principal(self->server_handle, &entry, mask, princ_pass); 
+        if (retval != KADM5_OK) {
+	  PyKAdminError_raise_error((long)retval, "kadm5_create_principal");
+	  has_error = 1;
+	  goto epilog;
+	}
 
     }
 
+ epilog:
     kadm5_free_principal_ent(self->server_handle, &entry);
+    free_tl_data(&entry.n_tl_data, &entry.tl_data);
 
+    if (has_error) return NULL;
     Py_RETURN_TRUE;
 }
 
@@ -395,9 +498,9 @@ static PyObject *PyKAdminObject_each_policy(PyKAdminObject *self, PyObject *args
 
 static PyMethodDef PyKAdminObject_methods[] = {
 
-    {"ank",                 (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
-    {"addprinc",            (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
-    {"add_principal",       (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
+    {"ank",                 (PyCFunction)PyKAdminObject_create_principal, (METH_VARARGS | METH_KEYWORDS), ""},
+    {"addprinc",            (PyCFunction)PyKAdminObject_create_principal, (METH_VARARGS | METH_KEYWORDS), ""},
+    {"add_principal",       (PyCFunction)PyKAdminObject_create_principal, (METH_VARARGS | METH_KEYWORDS), ""},
 
     {"delprinc",            (PyCFunction)PyKAdminObject_delete_principal, METH_VARARGS, ""},
     {"delete_principal",    (PyCFunction)PyKAdminObject_delete_principal, METH_VARARGS, ""},
