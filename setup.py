@@ -39,7 +39,7 @@ setup(name='python-kadmin',
                   "./PyKAdminXDR.c",
                   "./getdate.c"
                   ],
-              extra_compile_args=["-O0"]
+              #extra_compile_args=["-O0"]
               )
           ],
       classifiers=[
