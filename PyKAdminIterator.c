@@ -82,6 +82,7 @@ PyKAdminIterator *PyKAdminIterator_principal_iterator(PyKAdminObject *kadmin, ch
 
     kadm5_ret_t retval = KADM5_OK;
     PyKAdminIterator *iter = PyObject_New(PyKAdminIterator, &PyKAdminIterator_Type);
+    int has_error = 0;
 
     if (iter) {
 
@@ -94,7 +95,8 @@ PyKAdminIterator *PyKAdminIterator_principal_iterator(PyKAdminObject *kadmin, ch
             retval = kadm5_get_principals(kadmin->server_handle, match, &iter->names, &iter->count);
             if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_get_principals"); }
     }
-
+ epilog:
+    if (has_error) return NULL;
     Py_XINCREF(iter);
     return iter;
 }
@@ -104,6 +106,7 @@ PyKAdminIterator *PyKAdminIterator_policy_iterator(PyKAdminObject *kadmin, char 
 
     kadm5_ret_t retval = KADM5_OK;
     PyKAdminIterator *iter = PyObject_New(PyKAdminIterator, &PyKAdminIterator_Type);
+    int has_error = 0;
 
     if (iter) {
 
@@ -116,7 +119,8 @@ PyKAdminIterator *PyKAdminIterator_policy_iterator(PyKAdminObject *kadmin, char 
             retval = kadm5_get_policies(kadmin->server_handle, match, &iter->names, &iter->count);
             if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_get_policies"); }
     }
-
+ epilog:
+    if (has_error) return NULL;
     Py_XINCREF(iter);
     return iter;
 }
