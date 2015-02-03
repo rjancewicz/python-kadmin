@@ -1,0 +1,15 @@
+#!/usr/bin/expect
+
+set timeout -1
+spawn $env(SHELL)
+match_max 100000
+send -- "/usr/sbin/kdb5_util create -s"
+expect -exact "/usr/sbin/kdb5_util create -s"
+send -- "\r"
+expect "Enter KDC database master key: "
+send -- "y4xfpgb4\r"
+expect "Re-enter KDC database master key to verify: "
+send -- "y4xfpgb4\r"
+expect "\r"
+send -- "exit\r"
+expect eof 

@@ -1,0 +1,15 @@
+#!/usr/bin/expect
+
+set timeout -1
+spawn $env(SHELL)
+match_max 100000
+send -- "/usr/sbin/kdb5_ldap_util -D cn=root,dc=example,dc=com -w MDB_ROOT -H ldapi:/// stashsrvpw -f /var/kerberos/krb5kdc/.ldap.EXAMPLE.COM uid=krb5kdc,ou=accounts,dc=example,dc=com"
+expect -exact "/usr/sbin/kdb5_ldap_util -D cn=root,dc=example,dc=com -w MDB_ROOT -H ldapi:/// stashsrvpw -f /var/kerberos/krb5kdc/.ldap.EXAMPLE.COM uid=krb5kdc,ou=accounts,dc=example,dc=com"
+send -- "\r"
+expect "Password for \"uid=krb5kdc,ou=accounts,dc=example,dc=com\": "
+send -- "KRB5KDC_PASSWORD\r"
+expect "Re-enter password for \"uid=krb5kdc,ou=accounts,dc=example,dc=com\": "
+send -- "KRB5KDC_PASSWORD\r"
+expect "\r"
+send -- "exit\r"
+expect eof

@@ -1,0 +1,59 @@
+
+
+dn: dc=example,dc=com
+objectClass: top
+objectClass: dcObject
+objectClass: organization
+o: Example Company
+dc: example
+
+dn: ou=people,dc=example,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: people
+
+dn: uid=russell,ou=people,dc=example,dc=com
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: russell
+cn: Russell J Jancewicz
+userPassword: password
+sn: Jancewicz
+
+dn: uid=steven,ou=people,dc=example,dc=com
+objectClass: top
+objectClass: person
+objectClass: organizationalPerson
+objectClass: inetOrgPerson
+uid: steven
+cn: Steven User
+userPassword: password
+sn: User
+
+dn: ou=accounts,dc=example,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: accounts
+
+dn: ou=kerberos,dc=example,dc=com
+objectClass: organizationalUnit
+objectClass: top
+ou: kerberos
+
+dn: uid=kadmin,ou=accounts,dc=example,dc=com
+objectClass: top
+objectClass: account
+objectClass: simpleSecurityObject
+uid: kadmin
+userPassword: KADMIND_PASSWORD
+
+dn: uid=krb5kdc,ou=accounts,dc=example,dc=com
+objectClass: top
+objectClass: account
+objectClass: simpleSecurityObject
+uid: krb5kdc
+userPassword: KRB5KDC_PASSWORD
+
+

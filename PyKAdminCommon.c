@@ -33,6 +33,8 @@ inline char *PyUnicode_or_PyBytes_asCString(PyObject *in_str) {
         out_str = PyBytes_AsString(in_str);
     }
 
+    out_str = strdup(out_str);
+
     return out_str;
 }
 
@@ -598,27 +600,160 @@ int pykadmin_policy_ent_rec_compare(krb5_context ctx, kadm5_policy_ent_rec *a, k
     return result;
 }
 
-/*
-krb5_error_code pykadmin_copy_kadm_ent_rec(PyKAdminObject *kadmin, kadm5_principal_ent_rec *src, kadm5_principal_ent_rec *dst) {
 
-    krb5_error_code retval = 0;
+/* this is taken from the kadmin.c source
+    https://github.com/krb5/krb5/blob/master/src/kadmin/cli/kadmin.c */
+void pykadmin_append_tl_data(krb5_int16 *n_tl_datap, krb5_tl_data **tl_datap,
+            krb5_int16 tl_type, krb5_ui_2 len, krb5_octet *contents) {
+    krb5_tl_data *tl_data;
+    krb5_octet *copy;
 
-    memcpy(src, dst, sizeof(kadm5_principal_ent_rec));
-
-    retval = krb5_copy_principal(kadmin->context, src->principal, &dst->principal);
-
-    if (retval) goto done; 
-
-
-
-
-done:
-    if (retval && entry->principal) {
-        krb5_free_principal(kadmin->context, entry->principal);
-        entry->principal = NULL;
+    copy = malloc(len);
+    tl_data = calloc(1, sizeof(*tl_data));
+    if (copy == NULL || tl_data == NULL) {
+        exit(1);
     }
-    return retval;
-}
-*/
+    memcpy(copy, contents, len);
 
+    tl_data->tl_data_type = tl_type;
+    tl_data->tl_data_length = len;
+    tl_data->tl_data_contents = copy;
+    tl_data->tl_data_next = NULL;
+
+    for (; *tl_datap != NULL; tl_datap = &(*tl_datap)->tl_data_next);
+    *tl_datap = tl_data;
+    (*n_tl_datap)++;
+}
+
+char **pykadmin_parse_db_args(PyObject *object) {
+
+    static const char DB_ARGS_ERROR[] = "Unable to parse db_args; valid types are set, list, tuple or dictionary.";
+    static const char FORMAT_STR[] = "%s=%s";
+
+    char **db_args = NULL;
+    size_t n_args  = 0;
+
+    Py_ssize_t index = 0;
+
+    if (object) {
+
+        if (PyDict_Check(object)) {
+
+            PyObject *key    = NULL;
+            PyObject *value  = NULL;
+            
+            char *key_cstr   = NULL;
+            char *value_cstr = NULL;
+            char *argument   = NULL;
+
+            size_t length    = 0; 
+
+            while (PyDict_Next(object, &index, &key, &value)) {
+
+                if (PyUnicodeBytes_Check(key) && PyUnicodeBytes_Check(value)) {
+
+                    key_cstr = PyUnicode_or_PyBytes_asCString(key);
+                    value_cstr = PyUnicode_or_PyBytes_asCString(value);
+
+                    length = strlen(key_cstr) + strlen(value_cstr) + 4; // strlen("=\"\"\0") == 4
+                    argument = calloc(length, sizeof(char));
+
+                    if (argument) { 
+                        snprintf(argument, length, FORMAT_STR, key_cstr, value_cstr);
+
+                        db_args = realloc(db_args, sizeof(intptr_t) * (n_args + 1));
+                        if (!db_args) {
+                            // todo unable to allocate memory!
+                        }
+
+                        db_args[n_args++] = argument;
+                    }
+                }
+            }
+        }
+        else if (PySequence_Check(object)) {
+
+            PyObject *item     = NULL;
+            PyObject *sequence = NULL;
+
+            char *item_cstr    = NULL;
+            
+            Py_ssize_t size    = 0;
+
+            sequence = PySequence_Fast(object, DB_ARGS_ERROR);
+            size = PySequence_Size(object);
+
+            for (; index < size; index++) {
+
+                item = PySequence_Fast_GET_ITEM(sequence, index);
+
+                if (PyUnicodeBytes_Check(item)) {
+
+                    item_cstr = PyUnicode_or_PyBytes_asCString(item);
+
+                    db_args = realloc(db_args, sizeof(intptr_t) * (n_args + 1));
+                    if (!db_args) {
+                        // todo unable to allocate memory!
+                        // raise MemoryError (PyExc_MemoryError)
+                    }
+
+                    db_args[n_args++] = item_cstr;
+                }
+
+            }
+
+            Py_DECREF(sequence);
+        }
+        else {
+            PyErr_SetString(PyExc_TypeError, DB_ARGS_ERROR);
+            db_args = NULL;
+        }
+
+        if (db_args) {
+            // NULL terminate arguments 
+            db_args = realloc(db_args, sizeof(intptr_t) * (n_args + 1));
+            db_args[n_args] = NULL;
+        }
+
+    }
+
+    return db_args; 
+}
+
+
+void pykadmin_principal_append_db_args(kadm5_principal_ent_rec *entry, PyObject *args) {
+
+    char **db_args = pykadmin_parse_db_args(args);
+
+    Py_ssize_t index = 0;
+
+    if (db_args) {
+
+        while(db_args[index] != NULL) {
+
+            pykadmin_append_tl_data(&entry->n_tl_data, &entry->tl_data, 
+                KRB5_TL_DB_ARGS, strlen(db_args[index]) + 1, (krb5_octet *)db_args[index]);
+            index ++;
+        }
+
+    }
+
+    pykadmin_free_db_args(db_args);
+
+}
+ 
+void pykadmin_free_db_args(char **db_args) {
+
+    size_t index = 0;
+
+    if (db_args) {
+
+        while(db_args[index] != NULL) {
+            free(db_args[index++]);
+        }
+
+        free(db_args);
+    }
+
+}
 
