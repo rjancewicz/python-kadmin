@@ -26,6 +26,21 @@ It is advised that kadmin_local is used for rapid unpacked iteration, other task
 
 ##Examples:
 
+###Principal Creation: 
+
+```python
+>>> 
+>>> # ank, addprinc, add_principal are all aliases for principal creation
+>>> # omitting a password or setting to None results in a randomized key
+>>> # kadm.ank(principal [, password|None] [, db_args=db_args])
+>>> 
+>>> kadm.ank("user@EXAMPLE.COM", "correcthorsebatterysaple")
+>>> kadm.addprinc("user@EXAMPLE.COM", None)
+>>> # 
+>>> kadm.add_principal("user@EXAMPLE.COM", None, db_args={'dn':'uid=user,ou=people,dc=example,dc=com'})
+>>>
+```
+
 ###Principal Attributes:
 ```python
 >>> princ = kadm.getprinc("user@EXAMPLE.COM")
