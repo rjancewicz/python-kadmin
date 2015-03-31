@@ -347,7 +347,6 @@ static PyKAdminObject *_kadmin_init_with_ccache(PyObject *self, PyObject *args) 
 
     if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_init_with_creds"); }
 
-    Py_XINCREF(kadmin);
     return kadmin;
 }
 
@@ -356,6 +355,7 @@ static PyKAdminObject *_kadmin_init_with_ccache(PyObject *self, PyObject *args) 
 static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) {
 
     PyKAdminObject *kadmin = PyKAdminObject_create();
+
     PyObject *db_args_dict = NULL;
     kadm5_ret_t retval = KADM5_OK;
     krb5_error_code code = 0;
@@ -404,9 +404,6 @@ static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) 
 
     if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_init_with_skey"); }
 
-
-
-    Py_XINCREF(kadmin);
     return kadmin;
 }
 
@@ -444,7 +441,6 @@ static PyKAdminObject *_kadmin_init_with_password(PyObject *self, PyObject *args
 
     if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_init_with_password"); }
 
-    Py_XINCREF(kadmin);
     return kadmin;
 
 }
