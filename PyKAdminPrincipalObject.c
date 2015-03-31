@@ -978,7 +978,6 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_name(PyKAdminObj
         }
     }
 
-    Py_INCREF(principal);
     return principal;
 }
 
@@ -1001,7 +1000,6 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_db_entry(PyKAdmi
         } 
     }
 
-    Py_XINCREF(principal);
     return principal;
 }
 
