@@ -1,0 +1,9 @@
+dn: cn=module,cn=config
+changetype: add
+objectClass: olcModuleList
+cn: module
+olcModulePath: /usr/lib64/openldap
+olcModuleLoad: syncprov.la
+olcModuleLoad: memberof.la
+olcModuleLoad: accesslog.la
+olcModuleLoad: back_ldap.la

@@ -7,7 +7,6 @@
 
 #include "PyKAdminCommon.h"
 
-
 static void PyKAdminObject_dealloc(PyKAdminObject *self) {
     
     kadm5_ret_t retval;
@@ -100,7 +99,6 @@ static PyObject *PyKAdminObject_principal_exists(PyKAdminObject *self, PyObject 
 
 static PyObject *PyKAdminObject_delete_principal(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
 
-    
     kadm5_ret_t retval = KADM5_OK;
     krb5_error_code code = 0;
     krb5_principal princ = NULL;
@@ -133,6 +131,7 @@ static PyObject *PyKAdminObject_create_principal(PyKAdminObject *self, PyObject 
     krb5_error_code code = 0;
     char *princ_name = NULL;
     char *princ_pass = NULL;
+    PyDictObject *db_args = NULL;
 
     kadm5_principal_ent_rec entry;
     
@@ -140,16 +139,22 @@ static PyObject *PyKAdminObject_create_principal(PyKAdminObject *self, PyObject 
     entry.attributes = 0;
 
     // todo set default attributes.
-    
+    static char *kwlist[] = {"db_args", NULL};
+
     if (!PyArg_ParseTuple(args, "s|z", &princ_name, &princ_pass))
         return NULL;
+    
+    if (!PyArg_ParseTupleAndKeywords(PyTuple_New(0), kwds, "|O", kwlist, &db_args))
+        return NULL;
+
+    pykadmin_principal_append_db_args(&entry, db_args);
 
     if (self->server_handle) {
 
         code = krb5_parse_name(self->context, princ_name, &entry.principal);
         if (code) { PyKAdmin_RETURN_ERROR(retval, "krb5_parse_name"); }
 
-        retval = kadm5_create_principal(self->server_handle, &entry, KADM5_PRINCIPAL, princ_pass); 
+        retval = kadm5_create_principal(self->server_handle, &entry, KADM5_PRINCIPAL | KADM5_TL_DATA, princ_pass); 
         if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_create_principal"); }
 
     }
@@ -169,6 +174,8 @@ static PyKAdminPrincipalObject *PyKAdminObject_get_principal(PyKAdminObject *sel
         return NULL;
 
     principal = PyKAdminPrincipalObject_principal_with_name(self, client_name);
+
+    
 
     return principal;
 }
@@ -395,9 +402,9 @@ static PyObject *PyKAdminObject_each_policy(PyKAdminObject *self, PyObject *args
 
 static PyMethodDef PyKAdminObject_methods[] = {
 
-    {"ank",                 (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
-    {"addprinc",            (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
-    {"add_principal",       (PyCFunction)PyKAdminObject_create_principal, METH_VARARGS, ""},
+    {"ank",                 (PyCFunction)PyKAdminObject_create_principal, (METH_VARARGS | METH_KEYWORDS), ""},
+    {"addprinc",            (PyCFunction)PyKAdminObject_create_principal, (METH_VARARGS | METH_KEYWORDS), ""},
+    {"add_principal",       (PyCFunction)PyKAdminObject_create_principal, (METH_VARARGS | METH_KEYWORDS), ""},
 
     {"delprinc",            (PyCFunction)PyKAdminObject_delete_principal, METH_VARARGS, ""},
     {"delete_principal",    (PyCFunction)PyKAdminObject_delete_principal, METH_VARARGS, ""},
