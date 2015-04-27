@@ -11,7 +11,7 @@ import kadmin
 
 kadm = kadmin.init_with_keytab("user/admin@EXAMPLE.COM", "/path/to/keytab")
 kadm = kadmin.init_with_ccache("user/admin@EXAMPLE.COM", "/path/to/krb5cc")
-kadm = kadmin.init_wiht_password("user/admin@EXAMPLE.COM", "aStrongPassword")
+kadm = kadmin.init_with_password("user/admin@EXAMPLE.COM", "aStrongPassword")
 ```
 ### kadmin_local
 used for direct database access as local root account.
