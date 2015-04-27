@@ -18,6 +18,8 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     
+    uint8_t locked; 
+
     krb5_context context; 
     void *server_handle;
     char *realm;

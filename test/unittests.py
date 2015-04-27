@@ -1,4 +1,5 @@
 
+import gc
 import time
 import sys
 import kadmin
@@ -6,6 +7,7 @@ import kadmin_local
 import unittest
 import subprocess
 import logging
+from pprint import pprint
 
 import os.path
 
@@ -30,6 +32,8 @@ def create_test_prinicipal():
     data = None
 
     if not os.path.isfile(TEST_KEYTAB):
+
+        sys.stderr.write("Generating test/admin keytab...\n")
 
         command = '''
 spawn kadmin.local -p root@EXAMPLE.COM
@@ -280,7 +284,6 @@ class KAdminUnitTests(unittest.TestCase):
 
 
 class KAdminLocalUnitTests(unittest.TestCase):
-#class KAdminLocalUnitTests():
 
     ''' Missing in 2.6 '''
     def assertIsNotNone(self, expr, msg=None):
@@ -291,7 +294,7 @@ class KAdminLocalUnitTests(unittest.TestCase):
 
     
     def setUp(self):
-    
+
         # let the exception bubble up the test.
         kadm = kadmin_local.local();
         
@@ -302,7 +305,7 @@ class KAdminLocalUnitTests(unittest.TestCase):
 
         self.logger = logging.getLogger('python-kadmin')
     
-    
+
     def test_local(self):
         
         try:    
@@ -374,7 +377,6 @@ class KAdminLocalUnitTests(unittest.TestCase):
         kadm = self.kadm
 
         create_test_accounts()
-        
         pre_size = database_size()
 
         try: 
@@ -383,6 +385,7 @@ class KAdminLocalUnitTests(unittest.TestCase):
         except:
             self.fail("kadmin_local.ank rasied an error deleting an account.") 
 
+        
         post_size = database_size()
     
         self.assertEqual(pre_size, len(TEST_ACCOUNTS) + post_size)
@@ -494,18 +497,43 @@ class KAdminLocalUnitTests(unittest.TestCase):
 
 def main():
     
-    confirm = input('run tests against local kadmin server [yes/no] ? ')
+    #confirm = input('run tests against local kadmin server [yes/no] ? ')
 
-    if confirm.lower() == 'yes':
+    #if confirm.lower() == 'yes':
 
+    if True:
         create_test_prinicipal()
         create_ccache()
 
         logging.basicConfig(filename=TEST_LOG, format=LOG_FORMAT, level=logging.DEBUG)
 
-        unittest.main()
+        # setup unit tests
+
+        kadmin_tests = unittest.TestLoader().loadTestsFromTestCase(KAdminUnitTests)
+        kadmin_local_tests = unittest.TestLoader().loadTestsFromTestCase(KAdminLocalUnitTests)
+
+        unittest.TextTestRunner(verbosity=2).run(kadmin_tests)
+        unittest.TextTestRunner(verbosity=2).run(kadmin_local_tests)
+
+        #unittest.main()
+
 
 if __name__ == '__main__':
     main()
 
+# delete global constants
 
+del TEST_PRINCIPAL
+del TEST_KEYTAB
+del TEST_CCACHE
+del TEST_PASSWORD
+del TEST_LOG
+del LOG_FORMAT
+del TEST_ACCOUNTS
+
+# collect memory so our valgrind reports clear up any still reachable which shouldnt be
+gc.collect()
+
+
+pprint(locals())
+pprint(globals())

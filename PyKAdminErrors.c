@@ -4,10 +4,13 @@
 static PyObject *_pykadmin_error_base;
 static PyObject *_pykadmin_errors;
 
-//static PyObject *_pykadmin_kadm_errors; 
+//static PyObject *_pykadmin_kadm_errors;
 //static PyObject *_pykadmin_krb5_errors;
 
-/* 
+/*
+
+    k5-int.h
+
     Initialize Error Classes
 
     kadmin.KAdminError(exceptions.Exception)
@@ -24,7 +27,7 @@ int PyKAdminError_init_kdb(PyObject *module, PyObject *base);
 
 
 PyObject *PyKAdminError_init(PyObject *module) {
-    
+
     static const char kBASE_ERROR[] = "KAdminError";
     static const char kKADM_ERROR[] = "AdminError";
     static const char kKRB5_ERROR[] = "KerberosError";
@@ -66,19 +69,16 @@ PyObject *PyKAdminError_init(PyObject *module) {
             PyKAdminError_kdb = PyErr_NewException(cname, _pykadmin_error_base, NULL);
 
             if (PyKAdminError_kadm) {
-                //Py_INCREF(PyKAdminError_kadm);
                 PyModule_AddObject(module, kKADM_ERROR, PyKAdminError_kadm);
                 PyKAdminError_init_kadm(module, PyKAdminError_kadm);
             }
 
              if (PyKAdminError_krb5) {
-                //Py_INCREF(PyKAdminError_krb5);
                 PyModule_AddObject(module, kKRB5_ERROR, PyKAdminError_krb5);
                 PyKAdminError_init_krb5(module, PyKAdminError_krb5);
             }
 
              if (PyKAdminError_kdb) {
-                //Py_INCREF(PyKAdminError_krb5);
                 PyModule_AddObject(module, kKDB_ERROR, PyKAdminError_kdb);
                 PyKAdminError_init_kdb(module, PyKAdminError_kdb);
             }
@@ -110,8 +110,8 @@ static void _PyKAdminError_raise_exception(PyObject *storage, PyObject *error, c
             error_tuple = PyDict_GetItem(storage, error);
 
             if (error_tuple && (PyTuple_GET_SIZE(error_tuple) == 2)) {
-                error_object = PyTuple_GetItem(error_tuple, 0); 
-                error_string = PyTuple_GetItem(error_tuple, 1); 
+                error_object = PyTuple_GetItem(error_tuple, 0);
+                error_string = PyTuple_GetItem(error_tuple, 1);
             }
 
         }
@@ -130,39 +130,47 @@ static void _PyKAdminError_raise_exception(PyObject *storage, PyObject *error, c
 
     }
 
+    Py_DECREF(error);
     Py_XDECREF(error_dict);
 
 }
 
 void PyKAdminError_raise_error(long value, char *caller) {
+
     PyObject *error  = PyLong_FromLong((long)value);
     _PyKAdminError_raise_exception(_pykadmin_errors, error, caller);
 }
 
 /*
+void PyKAdminError_raise_kadm_error(kadm5_ret_t value, char *caller) {
 
-void PyKAdminError_raise_error(krb5_error_code code, char *caller) {
-    PyObject *error  = PyLong_FromLong((long)code);
+    PyObject *error  = PyLong_FromLong((long)(value));
     _PyKAdminError_raise_exception(_pykadmin_errors, error, caller);
 }
 
-void PyKAdminError_raise_error(kadm5_ret_t retval, char *caller) {
-    PyObject *error  = PyLong_FromLong((long)retval);
+void PyKAdminError_raise_krb5_error(krb5_error_code value, char *caller) {
+
+    PyObject *error  = PyLong_FromLong((long)(value));
     _PyKAdminError_raise_exception(_pykadmin_errors, error, caller);
 }
+
+void PyKAdminError_raise_kdb_error(krb5_error_code value, char *caller) {
+
+    PyObject *error  = PyLong_FromLong((long)(value));
+    _PyKAdminError_raise_exception(_pykadmin_errors, error, caller);
+
 */
-
 
 static int PyKAdminErrors_new_exception(PyObject *module, PyObject *base, PyObject *storage, PyObject *error, char *name, char *cname, char *message) {
 
-    int result = 0; 
+    int result = 0;
     PyObject *exception = NULL;
     PyObject *tuple     = NULL;
 
     if (module && base && storage && error && name && cname && message) {
 
         exception = PyErr_NewException(cname, base, NULL);
-        
+
         if (exception) {
 
             result = PyModule_AddObject(module, name, exception);
@@ -181,8 +189,8 @@ static int PyKAdminErrors_new_exception(PyObject *module, PyObject *base, PyObje
 }
 
 static int _pykadminerror_error_insert(PyObject *module, PyObject *base, krb5_error_code code, char *name, char *message) {
-    
-    int result       = 0; 
+
+    int result       = 0;
     char *cname      = NULL;
     size_t length    = strlen(kMODULE_NAME) + strlen(name) + 0xF;
     PyObject *error  = PyLong_FromLong((long)code);
@@ -191,7 +199,7 @@ static int _pykadminerror_error_insert(PyObject *module, PyObject *base, krb5_er
 
         cname = malloc(length);
 
-        if (cname) { 
+        if (cname) {
             snprintf(cname, length, "%s.%s", kMODULE_NAME, name);
             result = PyKAdminErrors_new_exception(module, base, _pykadmin_errors, error, name, cname, message);
             free(cname);
@@ -201,90 +209,46 @@ static int _pykadminerror_error_insert(PyObject *module, PyObject *base, krb5_er
     return result;
 }
 
-/*
-static int _pykadminerror_error_insert(PyObject *module, PyObject *base, krb5_error_code code, char *name, char *message) {
-    
-    int result       = 0; 
-    char *cname      = NULL;
-    size_t length    = strlen(kMODULE_NAME) + strlen(name) + 0xF;
-    PyObject *error  = PyLong_FromLong(code);
-
-    if (error) {
-
-        cname = malloc(length);
-
-        if (cname) { 
-            snprintf(cname, length, "%s.%s", kMODULE_NAME, name);
-            result = PyKAdminErrors_new_exception(module, base, _pykadmin_krb5_errors, error, name, cname, message);
-            free(cname);
-        }
-    }
-
-    return result;
-}
-
-
-static int _pykadminerror_error_insert(PyObject *module, PyObject *base, kadm5_ret_t retval, char *name, char *message) {
-    
-    int result       = 0; 
-    char *cname      = NULL;
-    size_t length    = strlen(kMODULE_NAME) + strlen(name) + 0xF;
-    PyObject *error  = PyLong_FromUnsignedLong(retval);
-
-    if (error) {
-
-        cname = malloc(length);
-
-        if (cname) { 
-            snprintf(cname, length, "%s.%s", kMODULE_NAME, name);
-            result = PyKAdminErrors_new_exception(module, base, _pykadmin_kadm_errors, error, name, cname, message);
-            free(cname);
-        }
-    }
-
-    return result;
-}
-*/
-
-
 int PyKAdminError_init_krb5(PyObject *module, PyObject *base) {
 
-    int result = 0; 
+    int result = 0;
     //_pykadmin_krb5_errors = PyDict_New();
 
     if (_pykadmin_errors) {
 
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_NONE,                                 "KDCNoneError",               "No error");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_NAME_EXP,                             "KDCClientExpiredError",      "Client's entry in database has expired");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_SERVICE_EXP,                          "KDCServerExpireError",       "Server's entry in database has expired");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_BAD_PVNO,                             "KDCProtocolVersionError",    "Requested protocol version not supported");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_C_OLD_MAST_KVNO,                      "KDCClientOldMasterKeyError", "Client's key is encrypted in an old master key");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_S_OLD_MAST_KVNO,                      "KDCServerOldMasterKeyError", "Server's key is encrypted in an old master key");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_C_PRINCIPAL_UNKNOWN,                  "KDCClientNotFoundError",     "Client not found in Kerberos database");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_S_PRINCIPAL_UNKNOWN,                  "KDCServerNotFoundError",     "Server not found in Kerberos database");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_PRINCIPAL_NOT_UNIQUE,                 "KDCPrincipalUniqueError",    "Principal has multiple entries in Kerberos database");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_NULL_KEY,                             "KDCNullKeyError",            "Client or server has a null key");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_CANNOT_POSTDATE,                      "KDCCannotPostdateError",     "Ticket is ineligible for postdating");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_NEVER_VALID,                          "KDCNeverValidError",         "Requested effective lifetime is negative or too short");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_POLICY,                               "KDCPolicyError",             "KDC policy rejects request");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_BADOPTION,                            "KDCOptionError",             "KDC can't fulfill requested option");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_ETYPE_NOSUPP,                         "KDCEncryptionSupportError",  "KDC has no support for encryption type");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_SUMTYPE_NOSUPP,                       "KDCChecksumSupportError",    "KDC has no support for checksum type");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_PADATA_TYPE_NOSUPP,                   "KDCPADataSupportError",      "KDC has no support for padata type");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_TRTYPE_NOSUPP,                        "KDCTypeSupportError",        "KDC has no support for transited type");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_CLIENT_REVOKED,                       "KDCClientRevokedError",      "Clients credentials have been revoked");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_SERVICE_REVOKED,                      "KDCServerRevokedError",      "Credentials for server have been revoked");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_TGT_REVOKED,                          "KDCTGTRevokedError",         "TGT has been revoked");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_CLIENT_NOTYET,                        "KDCClientNotYetValidError",  "Client not yet valid - try again later");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_SERVICE_NOTYET,                       "KDCServerNotYetValidError",  "Server not yet valid - try again later");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_KEY_EXP,                              "KDCPasswordExpiredError",    "Password has expired");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_PREAUTH_FAILED,                       "KDCPreauthFailedError",      "Preauthentication failed");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_PREAUTH_REQUIRED,                     "KDCPreauthRequiredError",    "Additional pre-authentication required");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_SERVER_NOMATCH,                       "KDCServerMatchError",        "Requested server and ticket don't match");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_MUST_USE_USER2USER,                   "KDCRequireUser2UserError",   "Server principal valid for user2user only");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_PATH_NOT_ACCEPTED,                    "KDCPathError",               "KDC policy rejects transited path");
-        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_SVC_UNAVAILABLE,                      "KDCServiceUnavailableError", "A service is not available that is required to process the request");
-        
+        /* Errors defined by /usr/include/krb5/krb5.h */
+
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_NONE,                                 "KRB5KDCNoneError",               "No error");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_NAME_EXP,                             "KRB5KDCClientExpiredError",      "Client's entry in database has expired");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_SERVICE_EXP,                          "KRB5KDCServerExpireError",       "Server's entry in database has expired");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_BAD_PVNO,                             "KRB5KDCProtocolVersionError",    "Requested protocol version not supported");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_C_OLD_MAST_KVNO,                      "KRB5KDCClientOldMasterKeyError", "Client's key is encrypted in an old master key");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_S_OLD_MAST_KVNO,                      "KRB5KDCServerOldMasterKeyError", "Server's key is encrypted in an old master key");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_C_PRINCIPAL_UNKNOWN,                  "KRB5KDCClientNotFoundError",     "Client not found in Kerberos database");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_S_PRINCIPAL_UNKNOWN,                  "KRB5KDCServerNotFoundError",     "Server not found in Kerberos database");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_PRINCIPAL_NOT_UNIQUE,                 "KRB5KDCPrincipalUniqueError",    "Principal has multiple entries in Kerberos database");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_NULL_KEY,                             "KRB5KDCNullKeyError",            "Client or server has a null key");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_CANNOT_POSTDATE,                      "KRB5KDCCannotPostdateError",     "Ticket is ineligible for postdating");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_NEVER_VALID,                          "KRB5KDCNeverValidError",         "Requested effective lifetime is negative or too short");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_POLICY,                               "KRB5KDCPolicyError",             "KDC policy rejects request");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_BADOPTION,                            "KRB5KDCOptionError",             "KDC can't fulfill requested option");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_ETYPE_NOSUPP,                         "KRB5KDCEncryptionSupportError",  "KDC has no support for encryption type");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_SUMTYPE_NOSUPP,                       "KRB5KDCChecksumSupportError",    "KDC has no support for checksum type");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_PADATA_TYPE_NOSUPP,                   "KRB5KDCPADataSupportError",      "KDC has no support for padata type");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_TRTYPE_NOSUPP,                        "KRB5KDCTypeSupportError",        "KDC has no support for transited type");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_CLIENT_REVOKED,                       "KRB5KDCClientRevokedError",      "Clients credentials have been revoked");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_SERVICE_REVOKED,                      "KRB5KDCServerRevokedError",      "Credentials for server have been revoked");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_TGT_REVOKED,                          "KRB5KDCTGTRevokedError",         "TGT has been revoked");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_CLIENT_NOTYET,                        "KRB5KDCClientNotYetValidError",  "Client not yet valid - try again later");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_SERVICE_NOTYET,                       "KRB5KDCServerNotYetValidError",  "Server not yet valid - try again later");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_KEY_EXP,                              "KRB5KDCPasswordExpiredError",    "Password has expired");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_PREAUTH_FAILED,                       "KRB5KDCPreauthFailedError",      "Preauthentication failed");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_PREAUTH_REQUIRED,                     "KRB5KDCPreauthRequiredError",    "Additional pre-authentication required");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_SERVER_NOMATCH,                       "KRB5KDCServerMatchError",        "Requested server and ticket don't match");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_MUST_USE_USER2USER,                   "KRB5KDCRequireUser2UserError",   "Server principal valid for user2user only");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_PATH_NOT_ACCEPTED,                    "KRB5KDCPathError",               "KDC policy rejects transited path");
+        _pykadminerror_error_insert(module, base, KRB5KDC_ERR_SVC_UNAVAILABLE,                      "KRB5KDCServiceUnavailableError", "A service is not available that is required to process the request");
+
         // think AP stands for authentication or application protocol ? not sure
         _pykadminerror_error_insert(module, base, KRB5KRB_AP_ERR_BAD_INTEGRITY,                     "APIntegrityError",         "Decrypt integrity check failed");
         _pykadminerror_error_insert(module, base, KRB5KRB_AP_ERR_TKT_EXPIRED,                       "APTicketExpiredError",     "Ticket expired");
@@ -422,7 +386,7 @@ int PyKAdminError_init_krb5(PyObject *module, PyObject *base) {
         _pykadminerror_error_insert(module, base, KRB5_BAD_ENCTYPE,                                 "EncryptionTypeError", "Bad encryption type");
         _pykadminerror_error_insert(module, base, KRB5_BAD_KEYSIZE,                                 "KeySizeError",        "Key size is incompatible with encryption type");
         _pykadminerror_error_insert(module, base, KRB5_BAD_MSIZE,                                   "MessageSizeError",    "Message size is incompatible with encryption type");
-        
+
         _pykadminerror_error_insert(module, base, KRB5_CC_TYPE_EXISTS,                              "CCTypeExistsError", "Credentials cache type is already registered.");
         _pykadminerror_error_insert(module, base, KRB5_KT_TYPE_EXISTS,                              "KTTypeExistsError", "Key table type is already registered.");
 
@@ -445,21 +409,21 @@ int PyKAdminError_init_krb5(PyObject *module, PyObject *base) {
         _pykadminerror_error_insert(module, base, KRB5_PREAUTH_BAD_TYPE,                            "PreauthTypeError",                "Unsupported preauthentication type");
         _pykadminerror_error_insert(module, base, KRB5_PREAUTH_NO_KEY,                              "PreauthKeyError",                 "Required preauthentication key not supplied");
         _pykadminerror_error_insert(module, base, KRB5_PREAUTH_FAILED,                              "PreauthGenericError",             "Generic preauthentication failure");
-        
+
         _pykadminerror_error_insert(module, base, KRB5_RCACHE_BADVNO,                               "RCVserionNumberError", "Unsupported replay cache format version number");
         _pykadminerror_error_insert(module, base, KRB5_CCACHE_BADVNO,                               "CCVserionNumberError", "Unsupported credentials cache format version number");
         _pykadminerror_error_insert(module, base, KRB5_KEYTAB_BADVNO,                               "KTVersionNumberError", "Unsupported key table format version number");
 
         _pykadminerror_error_insert(module, base, KRB5_PROG_ATYPE_NOSUPP,                           "ProgramAddressTypeError", "Program lacks support for address type");
-        
+
         _pykadminerror_error_insert(module, base, KRB5_RC_REQUIRED,                                 "RCRequiredError", "Message replay detection requires rcache parameter");
-        
+
         _pykadminerror_error_insert(module, base, KRB5_ERR_BAD_HOSTNAME,                            "HostnameError",               "Hostname cannot be canonicalized");
         _pykadminerror_error_insert(module, base, KRB5_ERR_HOST_REALM_UNKNOWN,                      "HostRealmUnknownError",       "Cannot determine realm for host");
         _pykadminerror_error_insert(module, base, KRB5_SNAME_UNSUPP_NAMETYPE,                       "ServiceNameUnsupportedError", "Conversion to service principal undefined for name type");
-        
+
         _pykadminerror_error_insert(module, base, KRB5KRB_AP_ERR_V4_REPLY,                          "APV4ReplyError", "Initial Ticket response appears to be Version 4 error");
-        
+
         _pykadminerror_error_insert(module, base, KRB5_REALM_CANT_RESOLVE,                          "RealmResolveError",             "Cannot resolve network address for KDC in requested realm");
         _pykadminerror_error_insert(module, base, KRB5_TKT_NOT_FORWARDABLE,                         "TicketNotForwardableError",     "Requesting ticket can't get forwardable tickets");
         _pykadminerror_error_insert(module, base, KRB5_FWD_BAD_PRINCIPAL,                           "ForwardPrincipalError",         "Bad principal name while trying to forward credentials");
@@ -479,7 +443,7 @@ int PyKAdminError_init_krb5(PyObject *module, PyObject *base) {
         _pykadminerror_error_insert(module, base, KRB5_NOPERM_ETYPE,                                "EncryptionTypeError",           "Encryption type not permitted");
         _pykadminerror_error_insert(module, base, KRB5_CONFIG_ETYPE_NOSUPP,                         "ConfigEncryptionTypeError",     "No supported encryption types (config file error?)");
         _pykadminerror_error_insert(module, base, KRB5_OBSOLETE_FN,                                 "ObsoleteFunctionError",         "Program called an obsolete, deleted function");
-        
+
         _pykadminerror_error_insert(module, base, KRB5_EAI_FAIL,                                    "EAIGenericError",         "unknown getaddrinfo failure");
         _pykadminerror_error_insert(module, base, KRB5_EAI_NODATA,                                  "EAINoDataError",          "no data available for host/domain name");
         _pykadminerror_error_insert(module, base, KRB5_EAI_NONAME,                                  "EAINoNameError",          "host/domain name not found");
@@ -499,8 +463,8 @@ int PyKAdminError_init_krb5(PyObject *module, PyObject *base) {
         _pykadminerror_error_insert(module, base, KRB5_LOCAL_ADDR_REQUIRED,                         "LocalAddressRequiredError",  "Auth context must contain local address");
         _pykadminerror_error_insert(module, base, KRB5_REMOTE_ADDR_REQUIRED,                        "RemoteAddressRequiredError", "Auth context must contain remote address");
         _pykadminerror_error_insert(module, base, KRB5_TRACE_NOSUPP,                                "TraceSupportError",          "Tracing unsupported");
-    
-        result = 1;   
+
+        result = 1;
     }
 
     return result;
@@ -515,7 +479,7 @@ int PyKAdminError_init_kadm(PyObject *module, PyObject *base) {
     //_pykadmin_kadm_errors = PyDict_New();
 
     if (_pykadmin_errors) {
- 
+
         _pykadminerror_error_insert(module, base, KADM5_FAILURE,                  "FailureError",                 "Operation failed for unspecified reason");
         _pykadminerror_error_insert(module, base, KADM5_AUTH_GET,                 "AuthGetError",                 "Operation requires ``get'' privilege");
         _pykadminerror_error_insert(module, base, KADM5_AUTH_ADD,                 "AuthAddError",                 "Operation requires ``add'' privilege");
@@ -578,13 +542,17 @@ int PyKAdminError_init_kadm(PyObject *module, PyObject *base) {
 #       ifdef KADM5_PASS_Q_GENERIC
             _pykadminerror_error_insert(module, base, KADM5_PASS_Q_GENERIC,           "PasswordGenericError",         "Database synchronization failed");
 #       endif
-    
+
         result = 1;
     }
 
 
     return result;
 }
+
+
+
+
 
 
 int PyKAdminError_init_kdb(PyObject *module, PyObject *base) {
