@@ -8,6 +8,10 @@ struct module_state {
     PyObject *error;
 };
 
+#define Py_XRETURN(obj) { Py_XINCREF(obj); return obj; } 
+
+#define Py_DEBUG_REFCOUNT(obj, str) {fprintf(stderr, "%s: %d\n", str, obj->ob_refcnt);}
+
 #ifdef KADMIN_LOCAL
 #	define kMODULE_NAME "kadmin_local"
 #else

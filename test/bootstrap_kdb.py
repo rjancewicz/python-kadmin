@@ -9,7 +9,7 @@ for a in xrange(97, 98):
         for c in xrange(97, 123):
             for d in xrange(97, 123):
                 try:
-                    admin.create_principal(chr(a) + chr(b) + chr(c) + chr(d));
+                    admin.ank(chr(a) + chr(b) + chr(c) + chr(d));
                 except kadmin.KAdminError as error:
                     print error
                     pass

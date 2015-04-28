@@ -1,0 +1,10 @@
+
+
+{
+   kadm5_init_leaks
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:kadm5_init
+   ...
+}

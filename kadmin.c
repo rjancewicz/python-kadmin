@@ -182,19 +182,23 @@ static PyKAdminObject *_kadmin_local(PyObject *self, PyObject *args) {
 
     static const char *kROOT_ADMIN = "root/admin";
 
-    PyKAdminObject *kadmin = PyKAdminObject_create();
-    PyObject *py_db_args = NULL;
-    kadm5_ret_t retval     = KADM5_OK; 
-    int result             = 0;
+    PyKAdminObject *kadmin = NULL;
+    PyObject *py_db_args   = NULL;
     char **db_args         = NULL;
     char *client_name      = NULL;
+    kadm5_config_params *params = NULL;
+
+    kadm5_ret_t retval     = KADM5_OK; 
+    int result             = 0;
 
     if (!PyArg_ParseTuple(args, "|O", &py_db_args))
         return NULL; 
 
-    db_args = pykadmin_parse_db_args(py_db_args);
+    kadmin = PyKAdminObject_create();
 
-    kadm5_config_params *params = calloc(0x1, sizeof(kadm5_config_params));
+    params = calloc(0x1, sizeof(kadm5_config_params));
+
+    db_args = pykadmin_parse_db_args(py_db_args);
 
     result = asprintf(&client_name, "%s@%s", kROOT_ADMIN, kadmin->realm);
 
@@ -213,10 +217,22 @@ static PyKAdminObject *_kadmin_local(PyObject *self, PyObject *args) {
                 db_args, 
                 &kadmin->server_handle);
 
+    if (retval != KADM5_OK) {
+
+        Py_XDECREF(kadmin);
+        kadmin = NULL;
+
+        PyKAdminError_raise_error(retval, "kadm5_init_with_password.local");
+
+    }
+    
+    if (client_name)
+        free(client_name);
+
+    if (params)
+        free(params);
 
     pykadmin_free_db_args(db_args);
-
-    if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_init_with_password.local"); }
 
     return kadmin;
 
@@ -226,19 +242,20 @@ static PyKAdminObject *_kadmin_local(PyObject *self, PyObject *args) {
 
 static PyKAdminObject *_kadmin_init_with_ccache(PyObject *self, PyObject *args) {
     
-    PyKAdminObject *kadmin = PyKAdminObject_create();
-    PyObject *py_db_args = NULL;
-    kadm5_ret_t retval = KADM5_OK;
-    krb5_error_code code = 0;
+    PyKAdminObject *kadmin = NULL;
+    PyObject *py_db_args   = NULL;
+    kadm5_ret_t retval     = KADM5_OK;
+    krb5_error_code code   = 0;
 
-    krb5_principal princ = NULL;
-    char *ccache_name    = NULL;
-    char *client_name    = NULL;
-    char **db_args       = NULL;
+    krb5_principal princ   = NULL;
+    char *ccache_name      = NULL;
+    char *client_name      = NULL;
+    char *_resolved_client = NULL;
+    char **db_args         = NULL;
+
+    kadm5_config_params *params = NULL;
 
     krb5_ccache cc;             
-
-    kadm5_config_params *params = calloc(0x1, sizeof(kadm5_config_params));
 
     memset(&cc, 0, sizeof(krb5_ccache));
 
@@ -246,29 +263,44 @@ static PyKAdminObject *_kadmin_init_with_ccache(PyObject *self, PyObject *args) 
     if (!PyArg_ParseTuple(args, "|zzO", &client_name, &ccache_name, &py_db_args))
         return NULL; 
 
+    kadmin = PyKAdminObject_create();
+    params = calloc(0x1, sizeof(kadm5_config_params));
+
     db_args = pykadmin_parse_db_args(py_db_args);
 
     if (!ccache_name) {
         code = krb5_cc_default(kadmin->context, &cc);
-        if (code) { PyKAdmin_RETURN_ERROR(code, "krb5_cc_default"); }
+        if (code) { 
+            PyKAdminError_raise_error(code, "krb5_cc_default");
+            goto cleanup;
+        }
     } else {
         code = krb5_cc_resolve(kadmin->context, ccache_name, &cc);
-        if (code) { PyKAdmin_RETURN_ERROR(code, "krb5_cc_resolve"); }
+        if (code) { 
+            PyKAdminError_raise_error(code, "krb5_cc_resolve");
+            goto cleanup;
+        }
     } 
 
-    if (!client_name) {
+    _resolved_client = client_name;
+
+    if (!_resolved_client) {
         code = krb5_cc_get_principal(kadmin->context, cc, &princ);
-        if (code) { PyKAdmin_RETURN_ERROR(code, "krb5_cc_get_principal"); }
+        if (code) { 
+            PyKAdminError_raise_error(code, "krb5_cc_get_principal");
+            goto cleanup;
+        }
 
-        code = krb5_unparse_name(kadmin->context, princ, &client_name);
-        if (code) { PyKAdmin_RETURN_ERROR(code, "krb5_unparse_name"); }
-
-        krb5_free_principal(kadmin->context, princ);
+        code = krb5_unparse_name(kadmin->context, princ, &_resolved_client);
+        if (code) { 
+            PyKAdminError_raise_error(code, "krb5_unparse_name");
+            goto cleanup;
+        }
     }
     
     retval = kadm5_init_with_creds(
                 kadmin->context, 
-                client_name, 
+                _resolved_client, 
                 cc, 
                 service_name, 
                 params,
@@ -277,9 +309,29 @@ static PyKAdminObject *_kadmin_init_with_ccache(PyObject *self, PyObject *args) 
                 db_args, 
                 &kadmin->server_handle);
 
-    pykadmin_free_db_args(db_args);
+    if (retval != KADM5_OK) { 
 
-    if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_init_with_creds"); }
+        Py_XDECREF(kadmin);
+        kadmin = NULL;
+
+        PyKAdminError_raise_error(retval, "kadm5_init_with_creds");
+    }
+
+
+cleanup:
+    
+    // we only clean up _resolved_client if we calculated it, otherwise it is 
+    //  an internal pointer of a python object and freeing it will be illegal.
+    if ((client_name == NULL) && _resolved_client)
+        free(_resolved_client);
+
+    krb5_free_principal(kadmin->context, princ);
+    krb5_cc_close(kadmin->context, cc);
+
+    if (params)
+        free(params);  
+
+    pykadmin_free_db_args(db_args);
 
     return kadmin;
 }
@@ -288,10 +340,10 @@ static PyKAdminObject *_kadmin_init_with_ccache(PyObject *self, PyObject *args) 
 
 static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) {
 
-    PyKAdminObject *kadmin = PyKAdminObject_create();
+    PyKAdminObject *kadmin = NULL;
 
     PyObject *py_db_args = NULL;
-    kadm5_ret_t retval = KADM5_OK;
+    kadm5_ret_t retval   = KADM5_OK;
     krb5_error_code code = 0;
 
     krb5_principal princ = NULL;
@@ -299,10 +351,13 @@ static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) 
     char *keytab_name    = NULL;
     char **db_args       = NULL;
 
-    kadm5_config_params *params = calloc(0x1, sizeof(kadm5_config_params));
+    kadm5_config_params *params = NULL;
 
     if (!PyArg_ParseTuple(args, "|zzO", &client_name, &keytab_name, &py_db_args))
         return NULL; 
+
+    kadmin = PyKAdminObject_create();
+    params = calloc(0x1, sizeof(kadm5_config_params));
 
     db_args = pykadmin_parse_db_args(py_db_args);
 
@@ -313,14 +368,17 @@ static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) 
     if (client_name == NULL) {
         
         code = krb5_sname_to_principal(kadmin->context, NULL, "host", KRB5_NT_SRV_HST, &princ);
-        if (code) { PyKAdmin_RETURN_ERROR(code, "krb5_sname_to_principal"); }
+        if (code) { 
+            PyKAdminError_raise_error(code, "krb5_sname_to_principal");
+            goto cleanup;
+        }
         
         code = krb5_unparse_name(kadmin->context, princ, &client_name);
-        if (code) { PyKAdmin_RETURN_ERROR(code, "krb5_unparse_name"); }
-
-        krb5_free_principal(kadmin->context, princ);
+        if (code) { 
+            PyKAdminError_raise_error(code, "krb5_unparse_name");
+            goto cleanup;
+        }
     }
-
 
     retval = kadm5_init_with_skey(
                 kadmin->context, 
@@ -333,9 +391,23 @@ static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) 
                 db_args, 
                 &kadmin->server_handle);
 
-    pykadmin_free_db_args(db_args);
+    if (retval != KADM5_OK) {
 
-    if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_init_with_skey"); }
+        Py_XDECREF(kadmin);
+        kadmin = NULL;
+
+        PyKAdminError_raise_error(retval, "kadm5_init_with_skey");
+    }
+
+cleanup:
+    
+    if (princ)
+        krb5_free_principal(kadmin->context, princ);
+
+    if (params)
+        free(params);
+
+    pykadmin_free_db_args(db_args);
 
     return kadmin;
 }
@@ -343,18 +415,21 @@ static PyKAdminObject *_kadmin_init_with_keytab(PyObject *self, PyObject *args) 
 
 static PyKAdminObject *_kadmin_init_with_password(PyObject *self, PyObject *args) {
 
-    PyKAdminObject *kadmin = PyKAdminObject_create();
-    PyObject *py_db_args = NULL;
-    kadm5_ret_t retval = KADM5_OK;
+    PyKAdminObject *kadmin = NULL;
+    PyObject *py_db_args   = NULL;
+    kadm5_ret_t retval     = KADM5_OK;
     
     char *client_name = NULL;
     char *password    = NULL;
     char **db_args    = NULL;
      
-    kadm5_config_params *params = calloc(0x1, sizeof(kadm5_config_params));
+    kadm5_config_params *params = NULL;
 
     if (!PyArg_ParseTuple(args, "zz|O", &client_name, &password, &py_db_args))
         return NULL;
+
+    kadmin = PyKAdminObject_create();
+    params = calloc(0x1, sizeof(kadm5_config_params));
 
     db_args = pykadmin_parse_db_args(py_db_args);
 
@@ -369,9 +444,18 @@ static PyKAdminObject *_kadmin_init_with_password(PyObject *self, PyObject *args
                 db_args, 
                 &kadmin->server_handle);
 
-    pykadmin_free_db_args(db_args);
+    if (retval != KADM5_OK) { 
 
-    if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_init_with_password"); }
+        Py_XDECREF(kadmin);
+        kadmin = NULL;
+
+        PyKAdminError_raise_error(retval, "kadm5_init_with_password");
+    }
+
+    if (params)
+        free(params);
+
+    pykadmin_free_db_args(db_args);
 
     return kadmin;
 

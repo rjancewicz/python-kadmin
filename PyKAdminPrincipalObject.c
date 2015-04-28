@@ -196,7 +196,7 @@ static PyObject *PyKAdminPrincipal_set_attributes(PyKAdminPrincipalObject *self,
         self->mask |= KADM5_ATTRIBUTES;
 
         //retval = kadm5_modify_principal(self->kadmin->server_handle, &self->entry, KADM5_ATTRIBUTES);
-        //if (retval != KADM5_OK) { PyKAdminError_raise_error(retval, "kadm5_modify_principal"); return NULL; }
+        //if (retval != KADM5_OK) { raise_error(retval, "kadm5_modify_principal"); return NULL; }
     }
 
     Py_RETURN_TRUE;
@@ -222,46 +222,67 @@ static PyObject *PyKAdminPrincipal_unset_attributes(PyKAdminPrincipalObject *sel
 
 static PyObject *PyKAdminPrincipal_commit(PyKAdminPrincipalObject *self) {
 
+    PyObject *result = NULL;
     kadm5_ret_t retval = KADM5_OK; 
 
     if (self && self->mask) {
 
         retval = kadm5_modify_principal(self->kadmin->server_handle, &self->entry, self->mask);
-        if (retval != KADM5_OK) { PyKAdminError_raise_error(retval, "kadm5_modify_principal"); } 
+        
+        if (retval == KADM5_OK) {
+            result = Py_True;
+        } else { 
+            PyKAdminError_raise_error(retval, "kadm5_modify_principal"); 
+            goto cleanup;
+        } 
 
         self->mask = 0;
     }
 
-    Py_RETURN_TRUE;
+cleanup:
+
+    Py_XINCREF(result);
+    return result;
 }
 
 static PyObject *PyKAdminPrincipal_reload(PyKAdminPrincipalObject *self) {
 
-    krb5_error_code ret = 0;
+    PyObject *result = NULL;
+
+    krb5_error_code code = 0;
+
     kadm5_ret_t retval = KADM5_OK; 
 
     krb5_principal temp = NULL;
 
     if (self) {
 
-        // we need to free prior to fetching otherwise we leak memory since principal and policy are pointers, alternitively we could manually free those
-        ret = krb5_copy_principal(self->kadmin->context, self->entry.principal, &temp);
-        if (ret) {}
-
-        retval = kadm5_free_principal_ent(self->kadmin->server_handle, &self->entry);
-        if (retval != KADM5_OK) { PyKAdminError_raise_error(retval, "kadm5_free_principal_ent"); } 
-
-        if (retval == KADM5_OK) {
-            retval = kadm5_get_principal(self->kadmin->server_handle, temp, &self->entry, KADM5_PRINCIPAL_NORMAL_MASK);
-            if (retval != KADM5_OK) { PyKAdminError_raise_error(retval, "kadm5_get_principal"); }
+        code = krb5_copy_principal(self->kadmin->context, self->entry.principal, &temp);
+        if (code) {
+            PyKAdminError_raise_error(code, "krb5_copy_principal");
+            goto cleanup;
         }
 
-        krb5_free_principal(self->kadmin->context, temp);
+        retval = kadm5_free_principal_ent(self->kadmin->server_handle, &self->entry);
+        if (retval != KADM5_OK) { 
+            PyKAdminError_raise_error(retval, "kadm5_free_principal_ent"); 
+            goto cleanup;
+        } 
 
-        if (retval != KADM5_OK) { return NULL; }        
+        retval = kadm5_get_principal(self->kadmin->server_handle, temp, &self->entry, KADM5_PRINCIPAL_NORMAL_MASK);
+        if (retval != KADM5_OK) { 
+            PyKAdminError_raise_error(retval, "kadm5_get_principal"); 
+            goto cleanup;
+        }    
+
     }
 
-    Py_RETURN_TRUE;
+cleanup:
+    
+    krb5_free_principal(self->kadmin->context, temp);
+
+    Py_XINCREF(result);
+    return result;
 }
 
 
@@ -272,6 +293,7 @@ static PyObject *PyKAdminPrincipal_unlock(PyKAdminPrincipalObject *self) {
 
 static PyObject *PyKAdminPrincipal_change_password(PyKAdminPrincipalObject *self, PyObject *args, PyObject *kwds) {
 
+    PyObject *result   = Py_True;
     kadm5_ret_t retval = KADM5_OK; 
     char *password     = NULL;
 
@@ -279,19 +301,28 @@ static PyObject *PyKAdminPrincipal_change_password(PyKAdminPrincipalObject *self
         return NULL; 
 
     retval = kadm5_chpass_principal(self->kadmin->server_handle, self->entry.principal, password);
-    if (retval != KADM5_OK) { PyKAdminError_raise_error(retval, "kadm5_chpass_principal"); return NULL; }
+    if (retval != KADM5_OK) {
+        PyKAdminError_raise_error(retval, "kadm5_chpass_principal");
+        result = NULL;
+    }
 
-    Py_RETURN_TRUE;
+    Py_XINCREF(result);
+    return result;
 }
 
 static PyObject *PyKAdminPrincipal_randomize_key(PyKAdminPrincipalObject *self) {
 
+    PyObject *result   = Py_True;
     kadm5_ret_t retval = KADM5_OK; 
 
     retval = kadm5_randkey_principal(self->kadmin->server_handle, self->entry.principal, NULL, NULL);
-    if (retval != KADM5_OK) { PyKAdminError_raise_error(retval, "kadm5_randkey_principal"); return NULL; }
+    if (retval != KADM5_OK)  {
+        PyKAdminError_raise_error(retval, "kadm5_randkey_principal");
+        result = NULL;
+    }
 
-    Py_RETURN_TRUE;
+    Py_XINCREF(result);
+    return result;
 }
 
 PyObject *PyKAdminPrincipal_RichCompare(PyObject *o1, PyObject *o2, int opid) {
@@ -331,17 +362,21 @@ PyObject *PyKAdminPrincipal_RichCompare(PyObject *o1, PyObject *o2, int opid) {
 static PyObject *PyKAdminPrincipal_get_principal(PyKAdminPrincipalObject *self, void *closure) {
   
     krb5_error_code code = 0;
-    PyObject *principal = NULL;
-    char *client_name   = NULL;
+    PyObject *principal  = NULL;
+    char *client_name    = NULL;
     
-    // todo: handle krb5_error_code
     code = krb5_unparse_name(self->kadmin->context, self->entry.principal, &client_name);
-    if (code) {}
-
-    if (client_name) {
-        principal = PyUnicode_FromString(client_name);
-        free(client_name);
+    if (code) {
+        PyKAdminError_raise_error(code, "krb5_unparse_name");
+        goto cleanup;
     }
+
+    principal = PyUnicode_FromString(client_name);
+
+cleanup:
+
+    if (client_name)
+        free(client_name);
 
     return principal;
 }
@@ -349,17 +384,22 @@ static PyObject *PyKAdminPrincipal_get_principal(PyKAdminPrincipalObject *self, 
 
 static PyObject *PyKAdminPrincipal_get_mod_name(PyKAdminPrincipalObject *self, void *closure) {
   
-    krb5_error_code ret = 0;
-    PyObject *principal = NULL;
-    char *client_name   = NULL;
+    krb5_error_code code = 0;
+    PyObject *principal  = NULL;
+    char *client_name    = NULL;
     
-    // todo: handle error
-    ret = krb5_unparse_name(self->kadmin->context, self->entry.mod_name, &client_name);
-
-    if (client_name) {
-        principal = PyUnicode_FromString(client_name);
-        free(client_name);
+    code = krb5_unparse_name(self->kadmin->context, self->entry.mod_name, &client_name);
+    if (code) {
+        PyKAdminError_raise_error(code, "krb5_unparse_name");
+        goto cleanup;
     }
+
+    principal = PyUnicode_FromString(client_name);
+
+cleanup:
+
+    if (client_name)
+        free(client_name);
 
     return principal;
 }
@@ -950,7 +990,7 @@ PyTypeObject PyKAdminPrincipalObject_Type = {
 
 PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_name(PyKAdminObject *kadmin, char *client_name) {
         
-    krb5_error_code errno;
+    krb5_error_code code;
     kadm5_ret_t retval = KADM5_OK;
 
     PyKAdminPrincipalObject *principal = (PyKAdminPrincipalObject *)Py_None;
@@ -965,12 +1005,13 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_name(PyKAdminObj
             Py_INCREF(kadmin);
             principal->kadmin = kadmin;
 
-            errno = krb5_parse_name(kadmin->context, client_name, &temp);
+            code = krb5_parse_name(kadmin->context, client_name, &temp);
+
             retval = kadm5_get_principal(kadmin->server_handle, temp, &principal->entry, (KADM5_PRINCIPAL_NORMAL_MASK | KADM5_KEY_DATA));
 
             krb5_free_principal(kadmin->context, temp);
 
-            if ((retval != KADM5_OK) || errno) {
+            if ((retval != KADM5_OK) || code) {
                 PyKAdminPrincipal_dealloc(principal);
                 principal = (PyKAdminPrincipalObject *)Py_None;
             }

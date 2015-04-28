@@ -12,11 +12,14 @@ static void PyKAdminObject_dealloc(PyKAdminObject *self) {
     kadm5_ret_t retval;
 
     if (self) {
-        krb5_db_unlock(self->context);
+
+        if (self->locked)
+            krb5_db_unlock(self->context);
 
         if (self->server_handle) {
             retval = kadm5_destroy(self->server_handle);
-            if (retval) {}
+            if (retval != KADM5_OK) {
+            }
             self->server_handle = NULL;
         }
         
@@ -44,17 +47,29 @@ static PyObject *PyKAdminObject_new(PyTypeObject *type, PyObject *args, PyObject
     if (self) {
 
         retval = kadm5_init_krb5_context(&self->context);
-        if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_init_krb5_context"); }
+        if (retval != KADM5_OK) { 
+            PyKAdminError_raise_error(retval, "kadm5_init_krb5_context");
+            Py_TYPE(self)->tp_free((PyObject *)self);
+            self = NULL;
+            goto cleanup;
+        }
 
         self->server_handle = NULL;
 
         // attempt to load the default realm 
         code = krb5_get_default_realm(self->context, &self->realm);
-        if (code) { PyKAdmin_RETURN_ERROR(code, "krb5_get_default_realm"); }
+
+        /*if (code) { 
+            PyKAdminError_raise_krb5_error(code, "krb5_get_default_realm");
+            goto cleanup;
+        }*/
 
         self->_storage = PyDict_New();
+        self->locked = 0;
     }
 
+cleanup:
+    
     return (PyObject *)self;    
 
 }
@@ -81,13 +96,21 @@ static PyObject *PyKAdminObject_principal_exists(PyKAdminObject *self, PyObject 
     if (self->server_handle) {
 
         code = krb5_parse_name(self->context, client_name, &princ);
-        if (code) { PyKAdmin_RETURN_ERROR(retval, "krb5_parse_name"); }
+        if (code) { 
+            PyKAdminError_raise_error(code, "krb5_parse_name");
+            goto cleanup;
+        }
 
         retval = kadm5_get_principal(self->server_handle, princ, &entry, KADM5_PRINCIPAL);
         if (retval == KADM5_OK) { result = Py_True; }
         else if (retval == KADM5_UNK_PRINC) { result = Py_False; }
-        else { PyKAdmin_RETURN_ERROR(retval, "kadm5_delete_principal"); }
+        else { 
+            PyKAdminError_raise_error(retval, "kadm5_get_principal");
+            goto cleanup;
+        }
     }
+
+cleanup:
     
     krb5_free_principal(self->context, princ);
     kadm5_free_principal_ent(self->server_handle, &entry);
@@ -104,6 +127,8 @@ static PyObject *PyKAdminObject_delete_principal(PyKAdminObject *self, PyObject 
     krb5_principal princ = NULL;
 
     char *client_name = NULL;
+    
+    PyObject *result = Py_True;
 
     if (!PyArg_ParseTuple(args, "s", &client_name))
         return NULL;
@@ -111,16 +136,28 @@ static PyObject *PyKAdminObject_delete_principal(PyKAdminObject *self, PyObject 
     if (self->server_handle) {
 
         code = krb5_parse_name(self->context, client_name, &princ);
-        if (code) { PyKAdmin_RETURN_ERROR(retval, "krb5_parse_name"); }
+        if (code) { 
+            PyKAdminError_raise_error(code, "krb5_parse_name");
+            result = NULL;
+            goto cleanup;
+        }
 
         retval = kadm5_delete_principal(self->server_handle, princ);
-        if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_delete_principal"); }
+        if (retval != KADM5_OK) {
+            PyKAdminError_raise_error(retval, "kadm5_delete_principal");
+            result = NULL;
+            goto cleanup;
+        }
 
     }
-    
-    krb5_free_principal(self->context, princ);
 
-    Py_RETURN_TRUE;
+cleanup:
+    
+    if (princ)
+        krb5_free_principal(self->context, princ);
+
+    Py_XINCREF(result);
+    return result;
 
 }
 
@@ -131,7 +168,9 @@ static PyObject *PyKAdminObject_create_principal(PyKAdminObject *self, PyObject 
     krb5_error_code code = 0;
     char *princ_name = NULL;
     char *princ_pass = NULL;
-    PyDictObject *db_args = NULL;
+    PyObject *db_args = NULL;
+
+    PyObject *result = Py_True;
 
     kadm5_principal_ent_rec entry;
     
@@ -152,16 +191,26 @@ static PyObject *PyKAdminObject_create_principal(PyKAdminObject *self, PyObject 
     if (self->server_handle) {
 
         code = krb5_parse_name(self->context, princ_name, &entry.principal);
-        if (code) { PyKAdmin_RETURN_ERROR(retval, "krb5_parse_name"); }
+        if (code) { 
+            PyKAdminError_raise_error(code, "krb5_parse_name");
+            result = NULL;
+            goto cleanup;
+        }
 
-        retval = kadm5_create_principal(self->server_handle, &entry, KADM5_PRINCIPAL | KADM5_TL_DATA, princ_pass); 
-        if (retval != KADM5_OK) { PyKAdmin_RETURN_ERROR(retval, "kadm5_create_principal"); }
+        retval = kadm5_create_principal(self->server_handle, &entry, (KADM5_PRINCIPAL | KADM5_TL_DATA), princ_pass); 
+        if (retval != KADM5_OK) {
+            PyKAdminError_raise_error(retval, "kadm5_create_principal");
+            result = NULL;
+        }
 
     }
 
+cleanup:
+
     kadm5_free_principal_ent(self->server_handle, &entry);
 
-    Py_RETURN_TRUE;
+    Py_XINCREF(result);
+    return result;
 }
 
 
@@ -285,9 +334,11 @@ static int kdb_iter_princs(void *data, krb5_db_entry *kdb) {
 
 static PyObject *PyKAdminObject_each_principal(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
 
+    PyObject *result = Py_True;
     char *match = NULL;
     krb5_error_code code = 0; 
     kadm5_ret_t lock = KADM5_OK; 
+
 
     static char *kwlist[] = {"callback", "data", "match", NULL};
     
@@ -306,26 +357,37 @@ static PyObject *PyKAdminObject_each_principal(PyKAdminObject *self, PyObject *a
 
     if ((lock == KADM5_OK) || (lock == KRB5_PLUGIN_OP_NOTSUPP)) {
 
+        if (lock == KADM5_OK)
+            self->locked = 1;
+
         krb5_clear_error_message(self->context);
 
         code = krb5_db_iterate(self->context, match, kdb_iter_princs, (void *)self);
     
-        if (lock != KRB5_PLUGIN_OP_NOTSUPP)   
+        if (lock != KRB5_PLUGIN_OP_NOTSUPP)  {
             lock = kadm5_unlock(self->server_handle);
+            if (lock == KADM5_OK)
+                self->locked = 0;
+        }
     }
 
     Py_DECREF(self->each_principal.callback);
     Py_DECREF(self->each_principal.data);
 
-    if (code) { PyKAdmin_RETURN_ERROR(code, "krb5_db_iterate"); }
+    if (code) { 
+        PyKAdminError_raise_error(code, "krb5_db_iterate");
+        result = NULL;
+        goto cleanup;
+    }
 
     if (self->each_principal.error) {
         _pykadmin_each_restore_error(self->each_principal.error);
-        return NULL;
     }
 
+cleanup:
 
-    Py_RETURN_TRUE;
+    Py_XINCREF(result);
+    return(result);
 
 }
 
@@ -362,6 +424,8 @@ static PyObject *PyKAdminObject_each_policy(PyKAdminObject *self, PyObject *args
     krb5_error_code code = 0; 
     kadm5_ret_t lock = KADM5_OK; 
 
+    PyObject *result = Py_True;
+
     static char *kwlist[] = {"", "data", "match", NULL};
     
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!|Oz", kwlist, &PyFunction_Type, &self->each_policy.callback, &self->each_policy.data, &match))
@@ -377,25 +441,38 @@ static PyObject *PyKAdminObject_each_policy(PyKAdminObject *self, PyObject *args
 
     if ((lock == KADM5_OK) || (lock == KRB5_PLUGIN_OP_NOTSUPP)) {
 
+        if (lock == KADM5_OK)
+            self->locked = 1;
+
         krb5_clear_error_message(self->context);
 
         code = krb5_db_iter_policy(self->context, match, kdb_iter_pols, (void *)self);
     
-        if (lock != KRB5_PLUGIN_OP_NOTSUPP)
+        if (lock != KRB5_PLUGIN_OP_NOTSUPP)  {
             lock = kadm5_unlock(self->server_handle);
+            if (lock == KADM5_OK)
+                self->locked = 0;
+        }
     }
 
     Py_DECREF(self->each_policy.callback);
     Py_DECREF(self->each_policy.data);
 
-    if (code) { PyKAdmin_RETURN_ERROR(code, "krb5_db_iter_policy"); }
+    if (code) { 
+        PyKAdminError_raise_error(code, "krb5_db_iter_policy");
+        result = NULL;
+        goto cleanup;
+    } 
 
     if (self->each_policy.error) {
         _pykadmin_each_restore_error(self->each_policy.error);
-        return NULL;
+        result = NULL;
     }
 
-    Py_RETURN_TRUE;
+cleanup:
+
+    Py_XINCREF(result);
+    return result;
 
 }
 #endif
