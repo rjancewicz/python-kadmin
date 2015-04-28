@@ -17,10 +17,10 @@ if newer('./src/getdate.y', './src/getdate.c'):
     execute(spawn, (['bison', '-y', '-o', './src/getdate.c', './src/getdate.y'],))
 
 setup(name='python-kadmin',
-      version='0.0.2',
+      version='0.1.1',
       description='Python module for kerberos admin (kadm5)',
       url='https://github.com/russjancewicz/python-kadmin',
-      download_url='https://github.com/russjancewicz/python-kadmin/tarball/0.0.2',
+      download_url='https://github.com/russjancewicz/python-kadmin/tarball/0.1.1',
       author='Russell Jancewicz',
       author_email='russell.jancewicz@gmail.com',
       license='MIT',
@@ -59,10 +59,10 @@ setup(name='python-kadmin',
       )
 
 setup(name='python-kadmin-local',
-      version='0.0.2',
+      version='0.1.1',
       description='Python module for kerberos admin (kadm5) via root local interface',
       url='https://github.com/russjancewicz/python-kadmin',
-      download_url='https://github.com/russjancewicz/python-kadmin/tarball/0.0.2',
+      download_url='https://github.com/russjancewicz/python-kadmin/tarball/0.1.1',
       author='Russell Jancewicz',
       author_email='russell.jancewicz@gmail.com',
       license='MIT',
