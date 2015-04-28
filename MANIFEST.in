@@ -1,2 +1,2 @@
-include *.h
-include *.y
+include src/*.h
+include src/*.y

@@ -17,10 +17,10 @@ if newer('./src/getdate.y', './src/getdate.c'):
     execute(spawn, (['bison', '-y', '-o', './src/getdate.c', './src/getdate.y'],))
 
 setup(name='python-kadmin',
-      version='0.1',
+      version='0.0.2',
       description='Python module for kerberos admin (kadm5)',
       url='https://github.com/russjancewicz/python-kadmin',
-      download_url='https://github.com/russjancewicz/python-kadmin/tarball/0.0.1',
+      download_url='https://github.com/russjancewicz/python-kadmin/tarball/0.0.2',
       author='Russell Jancewicz',
       author_email='russell.jancewicz@gmail.com',
       license='MIT',
@@ -30,15 +30,15 @@ setup(name='python-kadmin',
               libraries=["krb5", "kadm5clnt", "kdb5"],
               include_dirs=["/usr/include/", "/usr/include/et/"],
               sources=[
-                  "./src/kadmin.c",
-                  "./src/PyKAdminErrors.c",
-                  "./src/PyKAdminObject.c",
-                  "./src/PyKAdminIterator.c",
-                  "./src/PyKAdminPrincipalObject.c",
-                  "./src/PyKAdminPolicyObject.c",
-                  "./src/PyKAdminCommon.c",
-                  "./src/PyKAdminXDR.c",
-                  "./src/getdate.c"
+                  "src/kadmin.c",
+                  "src/PyKAdminErrors.c",
+                  "src/PyKAdminObject.c",
+                  "src/PyKAdminIterator.c",
+                  "src/PyKAdminPrincipalObject.c",
+                  "src/PyKAdminPolicyObject.c",
+                  "src/PyKAdminCommon.c",
+                  "src/PyKAdminXDR.c",
+                  "src/getdate.c"
                   ],
               #extra_compile_args=["-O0"]
               )
@@ -59,10 +59,10 @@ setup(name='python-kadmin',
       )
 
 setup(name='python-kadmin-local',
-      version='0.1',
+      version='0.0.2',
       description='Python module for kerberos admin (kadm5) via root local interface',
       url='https://github.com/russjancewicz/python-kadmin',
-      download_url='https://github.com/russjancewicz/python-kadmin/tarball/0.0.1',
+      download_url='https://github.com/russjancewicz/python-kadmin/tarball/0.0.2',
       author='Russell Jancewicz',
       author_email='russell.jancewicz@gmail.com',
       license='MIT',
@@ -72,15 +72,15 @@ setup(name='python-kadmin-local',
               libraries=["krb5", "kadm5srv", "kdb5"],
               include_dirs=["/usr/include/", "/usr/include/et/"],
               sources=[
-                  "./src/kadmin.c",
-                  "./src/PyKAdminErrors.c",
-                  "./src/PyKAdminObject.c",
-                  "./src/PyKAdminIterator.c",
-                  "./src/PyKAdminPrincipalObject.c",
-                  "./src/PyKAdminPolicyObject.c",
-                  "./src/PyKAdminCommon.c",
-                  "./src/PyKAdminXDR.c",
-                  "./src/getdate.c"
+                  "src/kadmin.c",
+                  "src/PyKAdminErrors.c",
+                  "src/PyKAdminObject.c",
+                  "src/PyKAdminIterator.c",
+                  "src/PyKAdminPrincipalObject.c",
+                  "src/PyKAdminPolicyObject.c",
+                  "src/PyKAdminCommon.c",
+                  "src/PyKAdminXDR.c",
+                  "src/getdate.c"
                   ],
               define_macros=[('KADMIN_LOCAL', '')]
               )
