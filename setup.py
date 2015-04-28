@@ -13,8 +13,8 @@ from distutils.spawn import spawn
 import os
 del os.link
 
-if newer('getdate.y', 'getdate.c'):
-    execute(spawn, (['bison', '-y', '-o', 'getdate.c', 'getdate.y'],))
+if newer('./src/getdate.y', './src/getdate.c'):
+    execute(spawn, (['bison', '-y', '-o', './src/getdate.c', './src/getdate.y'],))
 
 setup(name='python-kadmin',
       version='0.1',
@@ -30,15 +30,15 @@ setup(name='python-kadmin',
               libraries=["krb5", "kadm5clnt", "kdb5"],
               include_dirs=["/usr/include/", "/usr/include/et/"],
               sources=[
-                  "./kadmin.c",
-                  "./PyKAdminErrors.c",
-                  "./PyKAdminObject.c",
-                  "./PyKAdminIterator.c",
-                  "./PyKAdminPrincipalObject.c",
-                  "./PyKAdminPolicyObject.c",
-                  "./PyKAdminCommon.c",
-                  "./PyKAdminXDR.c",
-                  "./getdate.c"
+                  "./src/kadmin.c",
+                  "./src/PyKAdminErrors.c",
+                  "./src/PyKAdminObject.c",
+                  "./src/PyKAdminIterator.c",
+                  "./src/PyKAdminPrincipalObject.c",
+                  "./src/PyKAdminPolicyObject.c",
+                  "./src/PyKAdminCommon.c",
+                  "./src/PyKAdminXDR.c",
+                  "./src/getdate.c"
                   ],
               #extra_compile_args=["-O0"]
               )
@@ -72,15 +72,15 @@ setup(name='python-kadmin-local',
               libraries=["krb5", "kadm5srv", "kdb5"],
               include_dirs=["/usr/include/", "/usr/include/et/"],
               sources=[
-                  "./kadmin.c",
-                  "./PyKAdminErrors.c",
-                  "./PyKAdminObject.c",
-                  "./PyKAdminIterator.c",
-                  "./PyKAdminPrincipalObject.c",
-                  "./PyKAdminPolicyObject.c",
-                  "./PyKAdminCommon.c",
-                  "./PyKAdminXDR.c",
-                  "./getdate.c"
+                  "./src/kadmin.c",
+                  "./src/PyKAdminErrors.c",
+                  "./src/PyKAdminObject.c",
+                  "./src/PyKAdminIterator.c",
+                  "./src/PyKAdminPrincipalObject.c",
+                  "./src/PyKAdminPolicyObject.c",
+                  "./src/PyKAdminCommon.c",
+                  "./src/PyKAdminXDR.c",
+                  "./src/getdate.c"
                   ],
               define_macros=[('KADMIN_LOCAL', '')]
               )
