@@ -309,14 +309,6 @@ static PyKAdminObject *_kadmin_init_with_ccache(PyObject *self, PyObject *args) 
                 db_args, 
                 &kadmin->server_handle);
 
-    if (retval != KADM5_OK) { 
-
-        Py_XDECREF(kadmin);
-        kadmin = NULL;
-
-        PyKAdminError_raise_error(retval, "kadm5_init_with_creds");
-    }
-
 
 cleanup:
     
@@ -327,6 +319,14 @@ cleanup:
 
     krb5_free_principal(kadmin->context, princ);
     krb5_cc_close(kadmin->context, cc);
+
+    if (retval != KADM5_OK) {
+
+        Py_XDECREF(kadmin);
+        kadmin = NULL;
+
+        PyKAdminError_raise_error(retval, "kadm5_init_with_creds");
+    }
 
     if (params)
         free(params);  
