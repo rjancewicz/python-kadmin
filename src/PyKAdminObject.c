@@ -86,9 +86,10 @@ static PyObject *PyKAdminObject_principal_exists(PyKAdminObject *self, PyObject 
     krb5_principal princ = NULL;
 
     char *client_name = NULL;
-    PyObject *result = NULL;
+    PyObject *result = Py_False;
 
     kadm5_principal_ent_rec entry;
+    int entry_initialized = 0;
 
     if (!PyArg_ParseTuple(args, "s", &client_name))
         return NULL;
@@ -102,7 +103,11 @@ static PyObject *PyKAdminObject_principal_exists(PyKAdminObject *self, PyObject 
         }
 
         retval = kadm5_get_principal(self->server_handle, princ, &entry, KADM5_PRINCIPAL);
-        if (retval == KADM5_OK) { result = Py_True; }
+
+        if (retval == KADM5_OK) {
+            result = Py_True;
+            entry_initialized = 1; 
+        }
         else if (retval == KADM5_UNK_PRINC) { result = Py_False; }
         else { 
             PyKAdminError_raise_error(retval, "kadm5_get_principal");
@@ -113,7 +118,10 @@ static PyObject *PyKAdminObject_principal_exists(PyKAdminObject *self, PyObject 
 cleanup:
     
     krb5_free_principal(self->context, princ);
-    kadm5_free_principal_ent(self->server_handle, &entry);
+
+    if(entry_initialized) {
+        kadm5_free_principal_ent(self->server_handle, &entry);
+    }
 
     Py_XINCREF(result);
     return result;
