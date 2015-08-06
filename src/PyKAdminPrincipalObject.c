@@ -1013,6 +1013,8 @@ PyKAdminPrincipalObject *PyKAdminPrincipalObject_principal_with_name(PyKAdminObj
 
             if ((retval != KADM5_OK) || code) {
                 PyKAdminPrincipal_dealloc(principal);
+                if (retval == KADM5_AUTH_GET)
+                    PyKAdminError_raise_error(retval, "kadm5_get_principal");
                 principal = (PyKAdminPrincipalObject *)Py_None;
             }
 
