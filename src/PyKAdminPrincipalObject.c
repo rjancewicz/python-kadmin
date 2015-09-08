@@ -287,7 +287,12 @@ cleanup:
 
 
 static PyObject *PyKAdminPrincipal_unlock(PyKAdminPrincipalObject *self) {
-    return NULL;
+    PyObject *result   = Py_True;
+    self->entry.fail_auth_count = 0;
+    self->mask |= KADM5_FAIL_AUTH_COUNT;
+
+    Py_XINCREF(result);
+    return result;
 }
 
 
