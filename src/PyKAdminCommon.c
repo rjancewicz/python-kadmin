@@ -62,7 +62,8 @@ char *pykadmin_timestamp_as_isodate(time_t timestamp, const char *zero) {
 char *pykadmin_timestamp_as_deltastr(int seconds, const char *zero) {
 
     char *deltastr = NULL;
-    int negative, days, hours, minutes; 
+    int days, hours, minutes;
+    int negative = 0;
 
     if (seconds != 0) {
 
