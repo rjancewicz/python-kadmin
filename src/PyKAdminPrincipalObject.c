@@ -285,9 +285,72 @@ cleanup:
     return result;
 }
 
+/* taken from mit-krb5 kadmin.c - why's it in kadmin.c and not libkadm5
+ * anyways? */
+/* Construct a tl_data element and add it to the tail of *tl_datap. */
+static int
+add_tl_data(krb5_int16 *n_tl_datap, krb5_tl_data **tl_datap,
+            krb5_int16 tl_type, krb5_ui_2 len, krb5_octet *contents)
+{
+    krb5_tl_data *tl_data;
+    krb5_octet *copy;
+
+    copy = malloc(len);
+    tl_data = calloc(1, sizeof(*tl_data));
+    if (copy == NULL || tl_data == NULL)
+        return ENOMEM;
+    memcpy(copy, contents, len);
+
+    tl_data->tl_data_type = tl_type;
+    tl_data->tl_data_length = len;
+    tl_data->tl_data_contents = copy;
+    tl_data->tl_data_next = NULL;
+
+    for (; *tl_datap != NULL; tl_datap = &(*tl_datap)->tl_data_next);
+    *tl_datap = tl_data;
+    (*n_tl_datap)++;
+
+    return 0;
+}
+
+/* taken from k5-platform.h */
+static inline void
+store_32_le (unsigned int val, void *vp)
+{
+    unsigned char *p = (unsigned char *) vp;
+    p[3] = (val >> 24) & 0xff;
+    p[2] = (val >> 16) & 0xff;
+    p[1] = (val >>  8) & 0xff;
+    p[0] = (val      ) & 0xff;
+}
 
 static PyObject *PyKAdminPrincipal_unlock(PyKAdminPrincipalObject *self) {
-    return NULL;
+    krb5_error_code retval;
+    krb5_timestamp now;
+    krb5_octet timebuf[4];
+
+    /* Zero out the failed auth count. */
+    self->entry.fail_auth_count = 0;
+    self->mask |= KADM5_FAIL_AUTH_COUNT;
+
+    /* Record the timestamp of this unlock operation so that slave KDCs will
+     * see it, since fail_auth_count is unreplicated. */
+    retval = krb5_timeofday(self->kadmin->context, &now);
+    if (retval) {
+        PyKAdminError_raise_error(retval, "krb5_timeofday");
+        return NULL;
+    }
+    store_32_le((krb5_int32)now, timebuf);
+    retval = add_tl_data(&self->entry.n_tl_data, &self->entry.tl_data,
+        KRB5_TL_LAST_ADMIN_UNLOCK, 4, timebuf);
+    if (retval) {
+        PyKAdminError_raise_error(retval, "add_tl_data");
+        return NULL;
+    }
+
+    self->mask |= KADM5_TL_DATA;
+
+    Py_RETURN_TRUE;
 }
 
 
