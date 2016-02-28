@@ -40,7 +40,7 @@ setup(name='python-kadmin',
                   "src/PyKAdminXDR.c",
                   "src/getdate.c"
                   ],
-              #extra_compile_args=["-O0"]
+              extra_compile_args=["--std=gnu89"]
               )
           ],
       classifiers=[
@@ -82,6 +82,7 @@ setup(name='python-kadmin-local',
                   "src/PyKAdminXDR.c",
                   "src/getdate.c"
                   ],
+              extra_compile_args=["--std=gnu89"],
               define_macros=[('KADMIN_LOCAL', '')]
               )
           ],
