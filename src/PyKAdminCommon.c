@@ -15,7 +15,7 @@ kadm5_get_principal(void *server_handle, krb5_principal principal,
 
 #define TIME_NONE ((time_t) -1)
 
-inline char *PyUnicode_or_PyBytes_asCString(PyObject *in_str) {
+char *PyUnicode_or_PyBytes_asCString(PyObject *in_str) {
 
     char *out_str = NULL;
 
@@ -95,7 +95,7 @@ char *pykadmin_timestamp_as_deltastr(int seconds, const char *zero) {
 
 
 
-inline PyObject *pykadmin_pydatetime_from_timestamp(time_t timestamp) {
+PyObject *pykadmin_pydatetime_from_timestamp(time_t timestamp) {
 
     PyDateTime_IMPORT;
 

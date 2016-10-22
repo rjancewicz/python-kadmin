@@ -22,11 +22,11 @@
 #endif
 
 
-inline char *PyUnicode_or_PyBytes_asCString(PyObject *in_str);
+char *PyUnicode_or_PyBytes_asCString(PyObject *in_str);
 
 int pykadmin_policy_exists(void *server_handle, const char *name);
 
-inline PyObject *pykadmin_pydatetime_from_timestamp(time_t timestamp);
+PyObject *pykadmin_pydatetime_from_timestamp(time_t timestamp);
 int pykadmin_timestamp_from_pydatetime(PyObject *datetime);
 
 int pykadmin_seconds_from_pydatetime(PyObject *delta);
