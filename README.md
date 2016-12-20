@@ -107,7 +107,7 @@ It is advised that kadmin_local is used for rapid unpacked iteration, other task
 
 ###Change a password:
 ```python
-princ = kadm.get_princ("user@EXAMPLE.COM")
+princ = kadm.getprinc("user@EXAMPLE.COM")
 princ.change_password("correcthorsebatterystaple")
 ```
 
