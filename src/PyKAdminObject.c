@@ -306,32 +306,42 @@ static PyObject *PyKAdminObject_ktadd(PyKAdminObject *self, PyObject *args, PyOb
      code = krb5_kt_resolve(self->context, s_ktfile, &keytab);
      if ( code )
      {
-	  //TODO: Raise file error here.
+	  //TODO: Raise error here
 	  result = Py_False;
 	  goto cleanup;
      }
 
-     retval = kadm5_get_principal_keys(self->server_handle, princ, 0, &keys, &nkeys);
-     if ( retval != KADM5_OK )
+     code = krb5_kt_have_content(self->context, keytab);
+     if ( code == KRB5_KT_NOTFOUND ) //Only proceed if keytab not found
      {
-	  //TODO: Raise 'get keys' error here - insufficinet privileges ?
-	  result = Py_False;
-	  goto cleanup;
-     }
-
-     for ( i = 0; i < nkeys; i++ ) 
-     {
-	  memset(&entry, 0, sizeof(entry));
-	  entry.principal = princ;
-	  entry.vno = keys[i].kvno;
-	  entry.key = keys[i].key;
-	  code = krb5_kt_add_entry(self->context, keytab, &entry);
-	  if ( code ) 
+	  retval = kadm5_get_principal_keys(self->server_handle, princ, 0, &keys, &nkeys);
+	  if ( retval != KADM5_OK )
 	  {
-	       //TODO: Raise error here - cannot add to keytab
+	       //TODO: Raise 'get keys' error here - insufficinet privileges ?
 	       result = Py_False;
 	       goto cleanup;
 	  }
+
+	  for ( i = 0; i < nkeys; i++ ) 
+	  {
+	       memset(&entry, 0, sizeof(entry));
+	       entry.principal = princ;
+	       entry.vno = keys[i].kvno;
+	       entry.key = keys[i].key;
+	       code = krb5_kt_add_entry(self->context, keytab, &entry);
+	       if ( code ) 
+	       {
+		    //TODO: Raise error here - cannot add to keytab
+		    result = Py_False;
+		    goto cleanup;
+	       }
+	  }
+     }
+     else
+     {
+	  //TODO: Raise keytab file exists here
+	  result = Py_False;
+	  goto cleanup;
      }
 
 cleanup:
