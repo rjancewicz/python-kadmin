@@ -232,8 +232,6 @@ static PyKAdminPrincipalObject *PyKAdminObject_get_principal(PyKAdminObject *sel
 
     principal = PyKAdminPrincipalObject_principal_with_name(self, client_name);
 
-    
-
     return principal;
 }
 
@@ -276,6 +274,81 @@ static PyKAdminIterator *PyKAdminObject_policy_iter(PyKAdminObject *self, PyObje
     return PyKAdminIterator_policy_iterator(self, match);
 }
 
+
+static PyObject *PyKAdminObject_ktadd(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
+     kadm5_ret_t	 retval	   = KADM5_OK;
+     krb5_error_code	 code	   = 0;
+     krb5_principal	 princ	   = NULL;
+     krb5_keytab	 keytab	   = NULL;
+     kadm5_key_data*	 keys;
+     krb5_keytab_entry	 entry;
+     int nkeys = 0;
+     int i = 0;
+     
+     char*		 s_princ   = NULL;
+     char*		 s_ktfile  = NULL;
+
+     static char *kwlist[] = {"principal","keytabfile",NULL};
+
+     PyObject		 *result   = Py_True;
+     
+     if (!PyArg_ParseTupleAndKeywords(args,kwds,"ss", kwlist, &s_princ, &s_ktfile))
+	  return NULL;
+
+     code = krb5_parse_name(self->context, s_princ, &princ);
+     if ( code )
+     {
+	  //TODO: Raise principal name problem here
+	  result = Py_False;
+	  goto cleanup;
+     }
+
+     code = krb5_kt_resolve(self->context, s_ktfile, &keytab);
+     if ( code )
+     {
+	  //TODO: Raise file error here.
+	  result = Py_False;
+	  goto cleanup;
+     }
+
+     retval = kadm5_get_principal_keys(self->server_handle, princ, 0, &keys, &nkeys);
+     if ( retval != KADM5_OK )
+     {
+	  //TODO: Raise 'get keys' error here - insufficinet privileges ?
+	  result = Py_False;
+	  goto cleanup;
+     }
+
+     for ( i = 0; i < nkeys; i++ ) 
+     {
+	  memset(&entry, 0, sizeof(entry));
+	  entry.principal = princ;
+	  entry.vno = keys[i].kvno;
+	  entry.key = keys[i].key;
+	  code = krb5_kt_add_entry(self->context, keytab, &entry);
+	  if ( code ) 
+	  {
+	       //TODO: Raise error here - cannot add to keytab
+	       result = Py_False;
+	       goto cleanup;
+	  }
+     }
+
+cleanup:
+
+     if ( keytab )
+	  krb5_kt_close( self->context, keytab );
+     
+     if ( princ )
+	  krb5_free_principal(self->context, princ);
+
+     if ( nkeys > 0 )
+	  kadm5_free_kadm5_key_data(self->context, nkeys, keys);
+
+
+     Py_XINCREF(result);
+     return result;
+}
 
 #ifdef KADMIN_LOCAL
 
@@ -337,8 +410,6 @@ static int kdb_iter_princs(void *data, krb5_db_entry *kdb) {
     return 0;
 
 }
-
-
 
 static PyObject *PyKAdminObject_each_principal(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
 
@@ -403,8 +474,6 @@ cleanup:
 
 }
 
-
-
 static void kdb_iter_pols(void *data, osa_policy_ent_rec *entry) {
 
     PyKAdminObject *self = (PyKAdminObject *)data;
@@ -428,7 +497,6 @@ static void kdb_iter_pols(void *data, osa_policy_ent_rec *entry) {
         }
     }   
 }
-
 
 static PyObject *PyKAdminObject_each_policy(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
     
@@ -510,6 +578,9 @@ static PyMethodDef PyKAdminObject_methods[] = {
 
     {"principals",          (PyCFunction)PyKAdminObject_principal_iter,   (METH_VARARGS | METH_KEYWORDS), ""},
     {"policies",            (PyCFunction)PyKAdminObject_policy_iter,      (METH_VARARGS | METH_KEYWORDS), ""},
+
+    // colin@integrate.ai - added ktadd support
+    {"ktadd",		    (PyCFunction)PyKAdminObject_ktadd, (METH_VARARGS | METH_KEYWORDS), ""},
 
     // todo implement
     {"lock",                (PyCFunction)NULL,                            METH_NOARGS, ""},
