@@ -451,11 +451,11 @@ static PyObject *PyKAdminObject_each_principal(PyKAdminObject *self, PyObject *a
 
         krb5_clear_error_message(self->context);
 
-        code = krb5_db_iterate(self->context, match, kdb_iter_princs, (void *)self
-#if (KRB5_KDB_API_VERSION >= 8)
-            , 0 /* flags */
+#if KRB5_KDB_API_VERSION < 8
+	code = krb5_db_iterate(self->context, match, kdb_iter_princs, (void *)self);
+#else
+	code = krb5_db_iterate(self->context, match, kdb_iter_princs, (void *)self, 0 );
 #endif
-        );
     
         if (lock != KRB5_PLUGIN_OP_NOTSUPP)  {
             lock = kadm5_unlock(self->server_handle);
