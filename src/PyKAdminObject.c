@@ -298,15 +298,15 @@ static PyObject *PyKAdminObject_ktadd(PyKAdminObject *self, PyObject *args, PyOb
      code = krb5_parse_name(self->context, s_princ, &princ);
      if ( code )
      {
-	  //TODO: Raise principal name problem here
-	  result = Py_False;
+	  PyErr_SetString(PyExc_StandardError, "Cannot parse name principal name");
+	  result = (PyObject*) NULL;
 	  goto cleanup;
      }
 
      code = krb5_kt_resolve(self->context, s_ktfile, &keytab);
      if ( code )
      {
-	  //TODO: Raise error here
+	  PyErr_SetString(PyExc_StandardError, "Cannot resolve keyfile");
 	  result = Py_False;
 	  goto cleanup;
      }
@@ -317,8 +317,8 @@ static PyObject *PyKAdminObject_ktadd(PyKAdminObject *self, PyObject *args, PyOb
 	  retval = kadm5_get_principal_keys(self->server_handle, princ, 0, &keys, &nkeys);
 	  if ( retval != KADM5_OK )
 	  {
-	       //TODO: Raise 'get keys' error here - insufficinet privileges ?
-	       result = Py_False;
+	       PyErr_SetString(PyExc_StandardError, "Cannot get principal key set");
+	       result = (PyObject*) NULL;
 	       goto cleanup;
 	  }
 
@@ -331,16 +331,16 @@ static PyObject *PyKAdminObject_ktadd(PyKAdminObject *self, PyObject *args, PyOb
 	       code = krb5_kt_add_entry(self->context, keytab, &entry);
 	       if ( code ) 
 	       {
-		    //TODO: Raise error here - cannot add to keytab
-		    result = Py_False;
+		    PyErr_SetString(PyExc_StandardError, "Cannot add entry to keytab");
+		    result = (PyObject*) NULL;
 		    goto cleanup;
 	       }
 	  }
      }
      else
      {
-	  //TODO: Raise keytab file exists here
-	  result = Py_False;
+	  PyErr_SetString(PyExc_IOError, "Keytab file already exists");
+	  result = (PyObject*) NULL;
 	  goto cleanup;
      }
 
