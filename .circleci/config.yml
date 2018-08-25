@@ -13,7 +13,7 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            python -m venv venv
+            pip install virtualenv
             . venv/bin/activate
       - run:
           name: run tests
@@ -28,7 +28,7 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            python -m venv venv
+            pip install virtualenv
             . venv/bin/activate
             pip install awscli
       - run:
