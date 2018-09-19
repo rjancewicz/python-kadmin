@@ -1,0 +1,61 @@
+version: 2
+jobs:
+  test:
+    docker:
+      - image: circleci/python:2.7.15
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          - v3-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "setup.py"}}
+      - run:
+          name: Establish secure tunnel
+          command: |
+            SSH_PARAMS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ServerAliveInterval=10"
+            ssh $SSH_PARAMS -f -N -L 4443:python.internal.integrateai.net:443 ansible@ansible.integrateai.net
+      - run:
+          name: Install dependencies
+          command: |
+            virtualenv venv
+            . venv/bin/activate
+            pip install -r requirements.txt --extra-index-url https://localhost:4443 --trusted-host localhost:4443
+      - save_cache:
+          paths:
+            - ./venv
+          key: v3-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "setup.py"}}
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+          # include tests when not dependent on KDC
+  deploy-to-s3:
+    docker:
+      - image: circleci/python:2.7.15
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          - v3-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "setup.py"}}
+      - run:
+          name: Install dependencies
+          command: |
+            . venv/bin/activate
+            pip install awscli
+      - run:
+          name: Deploy to S3
+          command: |
+            . venv/bin/activate
+            python setup.py sdist
+            aws s3 cp ~/project/dist/python-kadmin-*.tar.gz s3://deployment.integrate.ai/python/python-kadmin/
+
+workflows:
+  version: 2
+  test-and-deploy:
+    jobs:
+      - test
+      - deploy-to-s3:
+          requires:
+            - test
+          filters:
+            branches:
+              only: master

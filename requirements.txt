@@ -1,0 +1,2 @@
+python-kadmin
+boto3
