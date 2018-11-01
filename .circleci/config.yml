@@ -16,7 +16,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            apt-get install bison flex
+            apt-get install -yyq bison flex
             virtualenv venv
             . venv/bin/activate
             pip install -r requirements.txt --extra-index-url https://localhost:4443 --trusted-host localhost:4443
