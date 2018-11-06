@@ -44,6 +44,7 @@ setup(name='python-kadmin',
               )
           ],
       packages=['pykerberize', 'pykerberize.test'],
+      scripts=['bin/kerberize_host','bin/kerberize_service'],
       install_requires=["boto3"],
       classifiers=[
           "Development Status :: 4 - Beta",
