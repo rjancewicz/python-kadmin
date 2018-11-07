@@ -40,13 +40,13 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            mkdir -p ./venv
             virtualenv ./venv
             . venv/bin/activate
             pip install awscli
       - run:
           name: Deploy to S3
           command: |
+            sudo apt-get install -yyq bison flex
             . venv/bin/activate
             python setup.py sdist
             aws s3 cp ~/project/dist/python-kadmin-*.tar.gz s3://deployment.integrate.ai/python/python-kadmin/
