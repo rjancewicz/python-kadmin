@@ -8,7 +8,9 @@ from distutils.spawn import spawn
 #
 # hack to support linking when running
 #  python setup.py sdist
-#
+# test
+
+
 
 import os
 del os.link
