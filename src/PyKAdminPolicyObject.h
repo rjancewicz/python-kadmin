@@ -20,7 +20,7 @@ typedef struct {
     kadm5_policy_ent_rec entry; 
 } PyKAdminPolicyObject;
 
-PyTypeObject PyKAdminPolicyObject_Type;
+extern PyTypeObject PyKAdminPolicyObject_Type;
 
 //#define PyKAdminPolicy_Check(policy) PyObject_TypeCheck(policy, &PyKAdminPolicyObject_Type)
 #define PyKAdminPolicyObject_CheckExact(obj) (Py_TYPE(obj) == &PyKAdminPolicyObject_Type)

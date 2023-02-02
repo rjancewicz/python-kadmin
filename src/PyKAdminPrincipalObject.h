@@ -21,7 +21,7 @@ typedef struct {
 
 } PyKAdminPrincipalObject;
 
-PyTypeObject PyKAdminPrincipalObject_Type;
+extern PyTypeObject PyKAdminPrincipalObject_Type;
 
 //#define PyKAdminPrincipalObject_Check(principal) PyObject_TypeCheck(principal, &PyKAdminPrincipalObject_Type)
 #define PyKAdminPrincipalObject_CheckExact(obj) (Py_TYPE(obj) == &PyKAdminPrincipalObject_Type)

@@ -31,7 +31,7 @@ typedef struct {
     
 } PyKAdminObject;
 
-PyTypeObject PyKAdminObject_Type;
+extern PyTypeObject PyKAdminObject_Type;
 
 PyKAdminObject *PyKAdminObject_create(void);
 void PyKAdminObject_destroy(PyKAdminObject *self);
