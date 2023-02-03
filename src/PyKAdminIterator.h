@@ -21,7 +21,7 @@ typedef struct {
 
 } PyKAdminIterator;
 
-PyTypeObject PyKAdminIterator_Type;
+extern PyTypeObject PyKAdminIterator_Type;
 
 PyKAdminIterator *PyKAdminIterator_principal_iterator(PyKAdminObject *kadmin, char *match);
 PyKAdminIterator *PyKAdminIterator_policy_iterator(PyKAdminObject *kadmin, char *match);
