@@ -954,7 +954,7 @@ static PyMethodDef PyKAdminPrincipal_methods[] = {
     {"randkey",         (PyCFunction)PyKAdminPrincipal_randomize_key,    METH_NOARGS,   kDOCSTRING_RANDKEY},
     {"randomize_key",   (PyCFunction)PyKAdminPrincipal_randomize_key,    METH_NOARGS,   kDOCSTRING_RANDKEY},
 
-    {"modify",           (PyCFunction)PyKAdminPrincipal_modify,            METH_KEYWORDS, kDOCSTRING_MODIFY},
+    {"modify",           (PyCFunction)PyKAdminPrincipal_modify,            METH_VARARGS | METH_KEYWORDS, kDOCSTRING_MODIFY},
 
     {"commit",           (PyCFunction)PyKAdminPrincipal_commit,           METH_NOARGS,   kDOCSTRING_COMMIT},
     {"reload",           (PyCFunction)PyKAdminPrincipal_reload,           METH_NOARGS,   kDOCSTRING_RELOAD},
