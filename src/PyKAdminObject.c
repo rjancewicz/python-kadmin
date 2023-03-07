@@ -170,6 +170,59 @@ cleanup:
 }
 
 
+static PyObject *PyKAdminObject_rename_principal(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
+
+    kadm5_ret_t retval = KADM5_OK;
+    krb5_error_code code = 0;
+    krb5_principal old_principal = NULL;
+    krb5_principal new_principal = NULL;
+
+    char *old_principal_name = NULL;
+    char *new_principal_name = NULL;
+
+    PyObject *result = Py_True;
+
+    if (!PyArg_ParseTuple(args, "ss", &old_principal_name, &new_principal_name))
+        return NULL;
+
+    if (self->server_handle) {
+
+        code = krb5_parse_name(self->context, old_principal_name, &old_principal);
+        if (code) {
+            PyKAdminError_raise_error(code, "krb5_parse_name");
+            result = NULL;
+            goto cleanup;
+        }
+
+        code = krb5_parse_name(self->context, new_principal_name, &new_principal);
+        if (code) {
+            PyKAdminError_raise_error(code, "krb5_parse_name");
+            result = NULL;
+            goto cleanup;
+        }
+
+        retval = kadm5_rename_principal(self->server_handle, old_principal, new_principal);
+        if (retval != KADM5_OK) {
+            PyKAdminError_raise_error(retval, "kadm5_rename_principal");
+            result = NULL;
+            goto cleanup;
+        }
+
+    }
+
+cleanup:
+
+    if (old_principal)
+        krb5_free_principal(self->context, old_principal);
+    if (new_principal)
+        krb5_free_principal(self->context, new_principal);
+
+    Py_XINCREF(result);
+    return result;
+
+}
+
+
 static PyObject *PyKAdminObject_create_principal(PyKAdminObject *self, PyObject *args, PyObject *kwds) {
 
     kadm5_ret_t retval   = KADM5_OK;
@@ -510,6 +563,9 @@ static PyMethodDef PyKAdminObject_methods[] = {
 
     {"principals",          (PyCFunction)PyKAdminObject_principal_iter,   (METH_VARARGS | METH_KEYWORDS), ""},
     {"policies",            (PyCFunction)PyKAdminObject_policy_iter,      (METH_VARARGS | METH_KEYWORDS), ""},
+
+    {"renprinc",            (PyCFunction)PyKAdminObject_rename_principal, METH_VARARGS, ""},
+    {"rename_principal",    (PyCFunction)PyKAdminObject_rename_principal, METH_VARARGS, ""},
 
     // todo implement
     {"lock",                (PyCFunction)NULL,                            METH_NOARGS, ""},

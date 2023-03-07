@@ -392,6 +392,20 @@ class KAdminLocalUnitTests(unittest.TestCase):
 
         delete_test_accounts()
 
+    def test_rename(self):
+        kadm = self.kadm
+
+        create_test_accounts()
+
+        account = TEST_ACCOUNTS[0]
+
+        kadm.rename_principal(account, 'other@EXAMPLE.COM')
+
+        try:
+            self.assertFalse(kadm.principal_exists(account))
+            self.assertTrue(kadm.principal_exists('other@EXAMPLE.COM'))
+        finally:
+            kadm.delprinc('other@EXAMPLE.COM')
 
     def test_double_create(self):
         
