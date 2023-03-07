@@ -41,32 +41,7 @@ setup(name='python-kadmin',
                   "src/getdate.c"
                   ],
               #extra_compile_args=["-O0"]
-              )
-          ],
-      classifiers=[
-          "Development Status :: 4 - Beta",
-          "Environment :: Console",
-          "Intended Audience :: System Administrators",
-          "Intended Audience :: Developers",
-          "Operating System :: POSIX",
-          "Programming Language :: C",
-          "Programming Language :: Python",
-          "Programming Language :: YACC",
-          "License :: OSI Approved :: MIT License",
-          "Topic :: Software Development :: Libraries :: Python Modules",
-          "Topic :: System :: Systems Administration :: Authentication/Directory",
-          ]
-      )
-
-setup(name='python-kadmin-local',
-      version='0.1.1',
-      description='Python module for kerberos admin (kadm5) via root local interface',
-      url='https://github.com/russjancewicz/python-kadmin',
-      download_url='https://github.com/russjancewicz/python-kadmin/tarball/v0.1.1',
-      author='Russell Jancewicz',
-      author_email='russell.jancewicz@gmail.com',
-      license='MIT',
-      ext_modules=[
+              ),
           Extension(
               "kadmin_local",
               libraries=["krb5", "kadm5srv", "kdb5"],
@@ -84,6 +59,7 @@ setup(name='python-kadmin-local',
                   ],
               define_macros=[('KADMIN_LOCAL', '')]
               )
+
           ],
       classifiers=[
           "Development Status :: 4 - Beta",
@@ -99,4 +75,3 @@ setup(name='python-kadmin-local',
           "Topic :: System :: Systems Administration :: Authentication/Directory",
           ]
       )
-
