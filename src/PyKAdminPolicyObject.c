@@ -67,13 +67,6 @@ Password failure count reset interval: 0 days 00:00:00
 Password lockout duration: 0 days 00:00:00
 */
 
-static int KAdminPolicyObject_print(PyKAdminPolicyObject *self, FILE *file, int flags){
-    // TODO
-    
-    return 0;
-}
-
-
 PyObject *PyKAdminPolicy_RichCompare(PyObject *o1, PyObject *o2, int opid) {
 
     PyKAdminPolicyObject *a = (PyKAdminPolicyObject *)o1;
@@ -120,7 +113,7 @@ PyTypeObject PyKAdminPolicyObject_Type = {
     sizeof(PyKAdminPolicyObject),             /*tp_basicsize*/
     0,                         /*tp_itemsize*/
     (destructor)PyKAdminPolicyObject_dealloc, /*tp_dealloc*/
-    KAdminPolicyObject_print,                         /*tp_print*/
+    0,                         /*tp_vectorcall_offset*/
     0,                         /*tp_getattr*/
     0,                         /*tp_setattr*/
     0,                         /*tp_compare*/
